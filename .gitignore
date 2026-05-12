@@ -21,3 +21,6 @@ Thumbs.db
 .vscode/settings.json
 *.suo
 *.user
+
+# SQLite local database
+backend/griefwallet.db
