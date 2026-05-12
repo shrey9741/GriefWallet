@@ -1,0 +1,69 @@
+{
+  "institution": "HDFC",
+  "full_name": "HDFC Bank",
+  "type": "bank",
+  "claim_type": "account_closure_nominee_or_succession",
+
+  "required_forms": [
+    {
+      "form_name": "HDFC Deceased Claim Form",
+      "where_to_get": "HDFC branch — must be collected in person",
+      "mandatory": true
+    },
+    {
+      "form_name": "Indemnity Bond",
+      "where_to_get": "HDFC branch provides format — executed on stamp paper",
+      "mandatory": false,
+      "condition": "Required for balances above Rs. 5 lakhs without succession cert"
+    }
+  ],
+
+  "required_documents": [
+    { "doc": "Death certificate", "copies": "Original + 2 attested copies", "mandatory": true },
+    { "doc": "Aadhaar of all nominees or legal heirs", "copies": "Self-attested copies", "mandatory": true },
+    { "doc": "PAN of deceased", "copies": "1 copy", "mandatory": true },
+    { "doc": "PAN of all nominees or legal heirs", "copies": "1 copy each", "mandatory": true },
+    { "doc": "Legal heir certificate", "copies": "Original + 1 attested copy", "mandatory": false, "condition": "Mandatory if no nominee registered OR multiple heirs" },
+    { "doc": "Succession certificate", "copies": "Court-certified copy", "mandatory": false, "condition": "Required for disputed claims or balance above Rs. 10 lakhs without nominee" },
+    { "doc": "Account passbook or last statement", "copies": "1 copy", "mandatory": false }
+  ],
+
+  "procedure_steps": [
+    "All nominees or legal heirs must be physically present at the HDFC branch together",
+    "Carry all original documents and self-attested copies",
+    "Collect HDFC deceased claim form from the branch",
+    "Fill the form and submit all documents to the branch relationship manager",
+    "Bank will initiate internal verification — typically takes 2–3 business days",
+    "For joint nominees, bank will split amount as per nomination percentage",
+    "Balance transferred to nominee accounts within 20–30 working days",
+    "HDFC sends a closure confirmation letter by post"
+  ],
+
+  "typical_timeline_days": { "min": 20, "max": 30, "unit": "working_days" },
+
+  "contact": {
+    "helpline": "1800-202-6161",
+    "email": "support@hdfcbank.com",
+    "portal": "https://hdfcbank.com",
+    "visit": "Home branch of deceased"
+  },
+
+  "common_rejection_reasons": [
+    "Not all nominees present at branch on same day",
+    "PAN of any nominee missing",
+    "Legal heir certificate not obtained when no nominee registered",
+    "Documents not self-attested",
+    "Death certificate not certified by municipality"
+  ],
+
+  "special_cases": {
+    "multiple_nominees": "All nominees must be present together. Bank splits claim per registered nomination ratio.",
+    "no_nominee_registered": "Legal heir certificate mandatory. If heirs dispute, succession certificate from civil court required.",
+    "locker": "Separate process — locker nominee or all legal heirs needed. Inventory required in presence of bank officer.",
+    "fixed_deposits": "Nominee can claim FD payout even if premature — TDS applies. PAN mandatory to avoid 20% TDS.",
+    "joint_account": "Surviving holder operates account. Death certificate submitted for KYC update only."
+  },
+
+  "letter_template_key": "hdfc_nominee_claim",
+  "priority_weight": 1
+}

@@ -1,0 +1,67 @@
+{
+  "institution": "SBI",
+  "full_name": "State Bank of India",
+  "type": "bank",
+  "claim_type": "account_closure_nominee_transfer",
+
+  "required_forms": [
+    {
+      "form_name": "SBI Nominee Claim Form",
+      "where_to_get": "At the home branch of deceased",
+      "notes": "Must be filled by the nominee in the presence of bank officer"
+    },
+    {
+      "form_name": "Account Closure Form",
+      "where_to_get": "At the home branch",
+      "notes": "Required along with nominee claim form"
+    }
+  ],
+
+  "required_documents": [
+    { "doc": "Death certificate", "copies": "Original + 2 attested copies", "mandatory": true },
+    { "doc": "Aadhaar card of nominee", "copies": "Original + 1 copy", "mandatory": true },
+    { "doc": "PAN card of deceased", "copies": "1 copy", "mandatory": true },
+    { "doc": "Original passbook of deceased", "copies": "Original", "mandatory": true },
+    { "doc": "Aadhaar card of deceased", "copies": "1 copy", "mandatory": false },
+    { "doc": "Legal heir certificate", "copies": "Original + 1 copy", "mandatory": false, "condition": "Required only if no nominee is registered on the account" },
+    { "doc": "Succession certificate", "copies": "Court-certified copy", "mandatory": false, "condition": "Required if claim is disputed or no nominee and no legal heir cert" }
+  ],
+
+  "procedure_steps": [
+    "Visit the home branch of the deceased — the branch where the account was held",
+    "Carry all original documents and self-attested copies",
+    "Meet the branch manager and inform about the death claim",
+    "Collect and fill the nominee claim form and account closure form at the branch",
+    "Submit all documents to the branch manager",
+    "Bank will verify the nomination records internally",
+    "Processing takes 15–20 working days",
+    "Balance transferred directly to nominee's bank account via NEFT"
+  ],
+
+  "typical_timeline_days": { "min": 15, "max": 20, "unit": "working_days" },
+
+  "contact": {
+    "helpline": "1800-11-2211",
+    "email": "customercare@sbi.co.in",
+    "portal": "https://sbi.co.in",
+    "visit": "Home branch of deceased account"
+  },
+
+  "common_rejection_reasons": [
+    "PAN card not submitted",
+    "Death certificate not attested",
+    "Nominee not registered on account — legal heir cert required",
+    "Passbook not submitted",
+    "Mismatch in nominee name vs Aadhaar"
+  ],
+
+  "special_cases": {
+    "no_nominee_registered": "Legal heir certificate required from tehsil/municipality. All legal heirs must be present at branch.",
+    "disputed_claim": "Succession certificate from civil court required. Claim processing halted until resolved.",
+    "pan_missing": "Bank will reject claim. Apply for duplicate PAN at NSDL before initiating claim.",
+    "joint_account": "Surviving account holder can operate account directly. Death certificate required for KYC update."
+  },
+
+  "letter_template_key": "sbi_closure_request",
+  "priority_weight": 1
+}

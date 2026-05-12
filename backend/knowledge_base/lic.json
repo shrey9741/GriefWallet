@@ -1,0 +1,92 @@
+{
+  "institution": "LIC",
+  "full_name": "Life Insurance Corporation of India",
+  "type": "insurance",
+  "claim_type": "death_benefit_claim",
+
+  "required_forms": [
+    {
+      "form_name": "Claim Form A",
+      "description": "Claimant's statement",
+      "where_to_get": "LIC branch or lic.gov.in/claim-forms",
+      "mandatory": true
+    },
+    {
+      "form_name": "Claim Form B",
+      "description": "Certificate from attending physician — cause of death",
+      "where_to_get": "From the hospital/doctor who treated the deceased",
+      "mandatory": true,
+      "condition": "Required for all natural death claims"
+    },
+    {
+      "form_name": "Claim Form B1",
+      "description": "Certificate of hospital treatment",
+      "where_to_get": "From hospital where deceased was admitted",
+      "mandatory": false,
+      "condition": "Required if deceased was hospitalised before death"
+    },
+    {
+      "form_name": "Claim Form C",
+      "description": "Certificate of identity and burial/cremation",
+      "where_to_get": "From local authority or panchayat",
+      "mandatory": false,
+      "condition": "Required in rural areas or when death cert is disputed"
+    },
+    {
+      "form_name": "NEFT mandate form",
+      "description": "Bank details for claim settlement",
+      "where_to_get": "LIC branch",
+      "mandatory": true
+    }
+  ],
+
+  "required_documents": [
+    { "doc": "Original LIC policy bond", "copies": "Original", "mandatory": true },
+    { "doc": "Death certificate", "copies": "Original + 2 attested copies", "mandatory": true },
+    { "doc": "Aadhaar card of nominee", "copies": "Original + 1 copy", "mandatory": true },
+    { "doc": "PAN card of nominee", "copies": "1 copy", "mandatory": true },
+    { "doc": "NEFT details — cancelled cheque or passbook", "copies": "1 copy", "mandatory": true },
+    { "doc": "Form B — doctor certificate", "copies": "Original signed by doctor", "mandatory": true },
+    { "doc": "Succession certificate", "copies": "Court-certified copy", "mandatory": false, "condition": "If claim is disputed or no nominee registered" }
+  ],
+
+  "procedure_steps": [
+    "Locate the LIC servicing branch using the policy number — call 1800-33-4433",
+    "Download and fill Claim Form A from lic.gov.in or collect from branch",
+    "Obtain Form B from the attending doctor or hospital — requires doctor signature and stamp",
+    "Collect all documents listed above",
+    "Submit complete dossier to the LIC branch in person",
+    "LIC will issue an acknowledgement receipt — keep this safe",
+    "Track claim status via lic.gov.in using policy number",
+    "LIC sends SMS updates at each stage",
+    "Settlement within 30 days for clean claims"
+  ],
+
+  "typical_timeline_days": { "min": 30, "max": 45, "unit": "calendar_days" },
+
+  "contact": {
+    "helpline": "1800-33-4433",
+    "email": "bo.claimshelpdesk@licindia.com",
+    "portal": "https://licindia.in",
+    "visit": "LIC servicing branch for the policy"
+  },
+
+  "common_rejection_reasons": [
+    "Form B not signed by attending doctor",
+    "Original policy bond not submitted",
+    "NEFT details missing or incorrect",
+    "PAN of nominee not provided",
+    "Policy was lapsed at time of death — check premium payment status"
+  ],
+
+  "special_cases": {
+    "lapsed_policy": "Claim may still be valid if lapse was recent. LIC has revival provisions. Check with branch.",
+    "no_nominee_registered": "Succession certificate from civil court required. Claim significantly delayed.",
+    "disputed_claim": "LIC pauses settlement. Succession certificate mandatory. Engage a lawyer.",
+    "accidental_death": "Additional Form D (accident death claim) required. Accidental benefit rider may double the payout.",
+    "policy_bond_lost": "Submit an indemnity bond with surety. Branch will guide the format."
+  },
+
+  "letter_template_key": "lic_death_claim",
+  "priority_weight": 1
+}

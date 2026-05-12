@@ -1,0 +1,79 @@
+{
+  "institution": "EPFO",
+  "full_name": "Employees Provident Fund Organisation",
+  "type": "government",
+  "claim_type": "pf_death_withdrawal_and_eps_pension",
+
+  "required_forms": [
+    {
+      "form_name": "Form 20",
+      "description": "PF withdrawal by nominee on death of member",
+      "where_to_get": "epfindia.gov.in or EPFO regional office",
+      "mandatory": true,
+      "notes": "Must be attested by the last employer"
+    },
+    {
+      "form_name": "Form 10-D",
+      "description": "EPS widow/family pension claim",
+      "where_to_get": "epfindia.gov.in or EPFO regional office",
+      "mandatory": true,
+      "notes": "Sets up monthly pension for eligible nominee. Separate from PF lump sum."
+    },
+    {
+      "form_name": "Form 51F",
+      "description": "Nominee claim when no nomination exists",
+      "where_to_get": "EPFO regional office",
+      "mandatory": false,
+      "condition": "Only if no nominee was registered by the deceased member"
+    }
+  ],
+
+  "required_documents": [
+    { "doc": "Death certificate", "copies": "Original + 2 attested copies", "mandatory": true },
+    { "doc": "UAN of deceased member", "mandatory": true, "how_to_get": "From last employer HR department" },
+    { "doc": "Aadhaar card of nominee", "copies": "Self-attested copy", "mandatory": true },
+    { "doc": "Bank passbook or cancelled cheque of nominee", "copies": "1 copy", "mandatory": true },
+    { "doc": "Joint photograph of nominee", "copies": "2 copies", "mandatory": true },
+    { "doc": "PAN card of deceased", "mandatory": false, "notes": "EPFO can process WITHOUT PAN if nominee Aadhaar is furnished — key advantage over banks" },
+    { "doc": "Form 20 attested by employer", "mandatory": true },
+    { "doc": "Form 10-D attested by employer", "mandatory": true }
+  ],
+
+  "procedure_steps": [
+    "Contact HR of deceased's last employer to obtain UAN",
+    "Confirm nominee registration on UAN portal — critical before proceeding",
+    "Download Form 20 and Form 10-D from epfindia.gov.in",
+    "Get both forms attested and stamped by the last employer",
+    "Submit complete set at nearest EPFO regional office in person",
+    "Collect acknowledgement slip with claim reference number",
+    "Track at epfindia.gov.in > Our Services > For Employees > Track Claim",
+    "PF lump sum credited in 30 days. EPS pension starts from next month after approval."
+  ],
+
+  "typical_timeline_days": { "pf_lumpsum": 30, "eps_pension_start": 45, "unit": "calendar_days" },
+
+  "contact": {
+    "helpline": "1800-118-005",
+    "portal": "https://epfindia.gov.in",
+    "grievance": "https://epfigms.gov.in",
+    "visit": "Nearest EPFO regional office"
+  },
+
+  "common_rejection_reasons": [
+    "UAN not seeded with Aadhaar — visit EPFO office to resolve",
+    "Employer not attested the forms — follow up with HR",
+    "Nominee not registered — Form 51F required instead",
+    "Bank account mismatch — account number and IFSC must be correct"
+  ],
+
+  "special_cases": {
+    "pan_missing": "EPFO does NOT require PAN of deceased if nominee Aadhaar is furnished. Proceed without PAN — unique advantage.",
+    "employer_not_cooperating": "File grievance at epfigms.gov.in. EPFO can directly process claim after grievance acknowledgement.",
+    "no_nominee_registered": "Use Form 51F. Legal heir certificate required. All family members must apply jointly.",
+    "uан_unknown": "Contact last employer HR. If company is closed, approach regional EPFO office with employment proof.",
+    "small_balance_under_50k": "Expedited processing — typically 15 days."
+  },
+
+  "letter_template_key": "epfo_form20_cover",
+  "priority_weight": 1
+}
