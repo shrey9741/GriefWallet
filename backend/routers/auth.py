@@ -17,7 +17,6 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 
-
 class RegisterRequest(BaseModel):
     email: str
     password: str
