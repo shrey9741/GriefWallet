@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useSignIn, useSignUp } from "@clerk/clerk-react";
 
 export default function Login() {
   const [tab, setTab] = useState("login");
@@ -13,13 +13,70 @@ export default function Login() {
     full_name: "",
   });
 
-  
-  const { login, register } = useAuth();
+  const { signIn, isLoaded: signInLoaded } = useSignIn();
+  const { signUp, isLoaded: signUpLoaded } = useSignUp();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setError("");
+  };
+
+  // ── Email/Password Login ──────────────────────────────────────────
+  const handleLogin = async () => {
+    if (!signInLoaded) return;
+    try {
+      const result = await signIn.create({
+        identifier: form.email,
+        password: form.password,
+      });
+      if (result.status === "complete") {
+        navigate("/dashboard");
+      }
+    } catch (err) {
+      setError(err.errors?.[0]?.message || "Login failed. Check your credentials.");
+    }
+  };
+
+  // ── Email/Password Register ───────────────────────────────────────
+  const handleRegister = async () => {
+    if (!signUpLoaded) return;
+    try {
+      const nameParts = form.full_name.trim().split(" ");
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+
+      const result = await signUp.create({
+        emailAddress: form.email,
+        password: form.password,
+        firstName,
+        lastName,
+      });
+
+      if (result.status === "complete") {
+        navigate("/dashboard");
+      } else {
+        // Email verification needed
+        await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+        setError("Check your email for a verification code.");
+      }
+    } catch (err) {
+      setError(err.errors?.[0]?.message || "Registration failed. Try again.");
+    }
+  };
+
+  // ── Google OAuth ──────────────────────────────────────────────────
+  const handleGoogle = async () => {
+    if (!signInLoaded) return;
+    try {
+      await signIn.authenticateWithRedirect({
+        strategy: "oauth_google",
+        redirectUrl: "/sso-callback",
+        redirectUrlComplete: "/dashboard",
+      });
+    } catch (err) {
+      setError("Google sign-in failed. Try again.");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -28,19 +85,15 @@ export default function Login() {
     setError("");
     try {
       if (tab === "login") {
-        await login(form.email, form.password);
+        await handleLogin();
       } else {
-        await register(form.email, form.password, form.full_name);
+        await handleRegister();
       }
-      navigate("/dashboard");
-    } catch (err) {
-      setError(err.response?.data?.detail || "Something went wrong. Try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  
   return (
     <div className="min-h-screen flex flex-col md:flex-row overflow-hidden bg-white dark:bg-gray-950">
 
@@ -236,9 +289,13 @@ export default function Login() {
             </div>
           </div>
 
-          {/* Social */}
+          {/* Google Button */}
           <div className="grid grid-cols-2 gap-3 mb-6">
-            <button className="flex items-center justify-center gap-2 h-12 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+            <button
+              onClick={handleGoogle}
+              type="button"
+              className="flex items-center justify-center gap-2 h-12 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+            >
               <img
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYuAws7ZfqS6JIMVt2ZGSepb4vZ_ezRhxeQLy9QIYvKnhtT8_qSdh1Fl8DDejjevx43VFKfhMEOnkcFas7GirbLN5lIM5BJ1Xn8BpGPCvBbBNpzkvDyS6tEDwv_vlWlBhQVz0ytinnI10c6OJDYJt8lS3bwK6FG7IgIWQCBumdQtPvrUnqL8oPGucEzmxTqjjsHcP1-KtW789Ol75O8WUv4aS-9d4kx_RNae2iz2x_YO_7oK91eiJdLdDGYUvHlcOlHW54FroAKWvH"
                 alt="Google"
@@ -246,12 +303,15 @@ export default function Login() {
               />
               Google
             </button>
-            <button className="flex items-center justify-center gap-2 h-12 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+            <button
+              type="button"
+              className="flex items-center justify-center gap-2 h-12 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+            >
               🔑 Passkey
             </button>
           </div>
 
-          {/* Switch tab link */}
+          {/* Switch tab */}
           <div className="text-center">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               {tab === "login" ? "Don't have an account? " : "Already have an account? "}
