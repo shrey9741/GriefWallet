@@ -13,6 +13,7 @@ export default function Login() {
     full_name: "",
   });
 
+  
   const { login, register } = useAuth();
   const navigate = useNavigate();
 
