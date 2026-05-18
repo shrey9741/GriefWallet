@@ -15,7 +15,6 @@ EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", 10080))
 
 
 
-
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
