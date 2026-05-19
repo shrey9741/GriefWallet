@@ -224,7 +224,7 @@ export default function Dashboard() {
           {/* Left + Center */}
           <div className="lg:col-span-2 space-y-6">
             {/* Welcome */}
-
+            
             <div className="mb-6">
               <h1 className="text-3xl font-bold text-gray-900">
                 Welcome back, <span className="text-blue-600">{firstName}</span>
@@ -276,7 +276,6 @@ export default function Dashboard() {
             </div>
 
             {/* Cases */}
-          
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-bold text-gray-900">
