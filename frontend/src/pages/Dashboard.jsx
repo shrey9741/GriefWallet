@@ -276,7 +276,6 @@ export default function Dashboard() {
             </div>
 
             {/* Cases */}
-
             
             <div>
               <div className="flex items-center justify-between mb-4">
