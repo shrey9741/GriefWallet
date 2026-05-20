@@ -276,7 +276,6 @@ export default function CreateCase() {
 
 
 
-
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-1">
                   <h2 className="text-base font-bold text-gray-900">
