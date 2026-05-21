@@ -39,6 +39,7 @@ export default function Login() {
   };
 
   // ── Email/Password Register ───────────────────────────────────────
+  
   const handleRegister = async () => {
     if (!signUpLoaded) return;
     try {
