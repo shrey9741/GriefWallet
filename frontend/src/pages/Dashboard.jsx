@@ -34,11 +34,7 @@ const CaseCard = ({ case: c, onOpen }) => {
   const pendingTasks = tasks.filter(
     (t) => t.status === "pending" || t.status === "blocked",
   );
-
-
-
-
-
+  
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all">
       <div className="flex items-start gap-3">
