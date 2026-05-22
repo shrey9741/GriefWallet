@@ -39,7 +39,6 @@ const CaseCard = ({ case: c, onOpen }) => {
 
 
 
-  
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all">
       <div className="flex items-start gap-3">
