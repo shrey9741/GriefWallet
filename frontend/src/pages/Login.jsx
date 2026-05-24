@@ -21,8 +21,18 @@ export default function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isSignedIn) navigate("/dashboard");
-  }, [isSignedIn]);
+    if (isSignedIn) {
+      navigate("/dashboard");
+      return;
+    }
+    // Handle Clerk hash redirect after Google OAuth
+    if (
+      window.location.hash.includes("continue") ||
+      window.location.hash.includes("token")
+    ) {
+      navigate("/dashboard");
+    }
+  }, [isSignedIn, window.location.hash]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -40,7 +50,9 @@ export default function Login() {
         navigate("/dashboard");
       }
     } catch (err) {
-      setError(err.errors?.[0]?.message || "Login failed. Check your credentials.");
+      setError(
+        err.errors?.[0]?.message || "Login failed. Check your credentials.",
+      );
     }
   };
 
@@ -59,7 +71,9 @@ export default function Login() {
       if (result.status === "complete") {
         navigate("/dashboard");
       } else {
-        await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+        await signUp.prepareEmailAddressVerification({
+          strategy: "email_code",
+        });
         setVerifying(true);
         setError("");
       }
@@ -86,17 +100,17 @@ export default function Login() {
   };
 
   const handleGoogle = async () => {
-  if (!signInLoaded) return;
-  try {
-    await signIn.authenticateWithRedirect({
-      strategy: "oauth_google",
-      redirectUrl: `${window.location.origin}/sso-callback`,
-      redirectUrlComplete: `${window.location.origin}/dashboard`,
-    });
-  } catch (err) {
-    setError("Google sign-in failed. Try again.");
-  }
-};
+    if (!signInLoaded) return;
+    try {
+      await signIn.authenticateWithRedirect({
+        strategy: "oauth_google",
+        redirectUrl: `${window.location.origin}/sso-callback`,
+        redirectUrlComplete: `${window.location.origin}/dashboard`,
+      });
+    } catch (err) {
+      setError("Google sign-in failed. Try again.");
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -115,7 +129,6 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row overflow-hidden bg-white dark:bg-gray-950">
-
       {/* Left Side */}
       <section className="hidden md:flex md:w-1/2 lg:w-3/5 relative flex-col justify-end p-10">
         <div className="absolute inset-0 z-0">
@@ -130,8 +143,8 @@ export default function Login() {
           <blockquote className="mb-4">
             <p className="text-2xl font-semibold text-white italic leading-tight">
               "GriefWallet gave me the peace of mind I desperately needed.
-              Managing my mother's estate felt like an impossible mountain
-              until I had this clear, secure roadmap."
+              Managing my mother's estate felt like an impossible mountain until
+              I had this clear, secure roadmap."
             </p>
           </blockquote>
           <div className="flex items-center gap-3">
@@ -153,16 +166,23 @@ export default function Login() {
       {/* Right Side */}
       <main className="w-full md:w-1/2 lg:w-2/5 flex flex-col justify-center bg-white dark:bg-gray-950 px-6 md:px-12 py-10 min-h-screen overflow-y-auto">
         <div className="max-w-md mx-auto w-full">
-
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-purple-600 dark:text-purple-400">GriefWallet</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Financial guardianship with security and empathy.</p>
+            <h1 className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+              GriefWallet
+            </h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Financial guardianship with security and empathy.
+            </p>
           </div>
 
           {/* Tabs */}
           <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-800">
             <button
-              onClick={() => { setTab("login"); setError(""); setVerifying(false); }}
+              onClick={() => {
+                setTab("login");
+                setError("");
+                setVerifying(false);
+              }}
               className={`pb-2 px-1 text-sm font-semibold transition-all border-b-2 ${
                 tab === "login"
                   ? "border-purple-600 text-purple-600 dark:text-purple-400 dark:border-purple-400"
@@ -172,7 +192,11 @@ export default function Login() {
               Sign In
             </button>
             <button
-              onClick={() => { setTab("register"); setError(""); setVerifying(false); }}
+              onClick={() => {
+                setTab("register");
+                setError("");
+                setVerifying(false);
+              }}
               className={`pb-2 px-1 text-sm font-semibold transition-all border-b-2 ${
                 tab === "register"
                   ? "border-purple-600 text-purple-600 dark:text-purple-400 dark:border-purple-400"
@@ -185,14 +209,18 @@ export default function Login() {
 
           <div className="mb-6">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              {verifying ? "Verify Your Email" : tab === "login" ? "Welcome Back" : "Get Started"}
+              {verifying
+                ? "Verify Your Email"
+                : tab === "login"
+                  ? "Welcome Back"
+                  : "Get Started"}
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               {verifying
                 ? "Enter the 6-digit code sent to your email."
                 : tab === "login"
-                ? "Please enter your credentials to access the guardian dashboard."
-                : "Create your account to start managing recovery cases."}
+                  ? "Please enter your credentials to access the guardian dashboard."
+                  : "Create your account to start managing recovery cases."}
             </p>
           </div>
 
@@ -207,7 +235,8 @@ export default function Login() {
           {verifying ? (
             <div className="space-y-4">
               <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-sm text-blue-700 dark:text-blue-300">
-                Check your email inbox for a 6-digit verification code from Clerk.
+                Check your email inbox for a 6-digit verification code from
+                Clerk.
               </div>
               <div className="flex flex-col">
                 <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 uppercase tracking-wide">
@@ -229,17 +258,38 @@ export default function Login() {
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    <svg
+                      className="animate-spin h-4 w-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8z"
+                      />
                     </svg>
                     Verifying...
                   </span>
-                ) : "✓ Verify Email"}
+                ) : (
+                  "✓ Verify Email"
+                )}
               </button>
               <button
                 type="button"
-                onClick={() => { setVerifying(false); setVerifyCode(""); setError(""); }}
+                onClick={() => {
+                  setVerifying(false);
+                  setVerifyCode("");
+                  setError("");
+                }}
                 className="w-full text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
               >
                 ← Back
@@ -251,7 +301,9 @@ export default function Login() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 {tab === "register" && (
                   <div className="flex flex-col">
-                    <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 uppercase tracking-wide">Full Name</label>
+                    <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 uppercase tracking-wide">
+                      Full Name
+                    </label>
                     <input
                       type="text"
                       name="full_name"
@@ -265,7 +317,9 @@ export default function Login() {
                 )}
 
                 <div className="flex flex-col">
-                  <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 uppercase tracking-wide">Email Address</label>
+                  <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 uppercase tracking-wide">
+                    Email Address
+                  </label>
                   <input
                     type="email"
                     name="email"
@@ -279,9 +333,16 @@ export default function Login() {
 
                 <div className="flex flex-col">
                   <div className="flex justify-between items-center mb-1">
-                    <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Password</label>
+                    <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                      Password
+                    </label>
                     {tab === "login" && (
-                      <a href="#" className="text-xs text-purple-600 dark:text-purple-400 hover:underline">Forgot Password?</a>
+                      <a
+                        href="#"
+                        className="text-xs text-purple-600 dark:text-purple-400 hover:underline"
+                      >
+                        Forgot Password?
+                      </a>
                     )}
                   </div>
                   <div className="relative">
@@ -311,14 +372,33 @@ export default function Login() {
                 >
                   {loading ? (
                     <span className="flex items-center gap-2">
-                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                      <svg
+                        className="animate-spin h-4 w-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v8z"
+                        />
                       </svg>
-                      {tab === "login" ? "Signing in..." : "Creating account..."}
+                      {tab === "login"
+                        ? "Signing in..."
+                        : "Creating account..."}
                     </span>
                   ) : (
-                    <>🔒 {tab === "login" ? "Secure Sign In" : "Create Account"}</>
+                    <>
+                      🔒 {tab === "login" ? "Secure Sign In" : "Create Account"}
+                    </>
                   )}
                 </button>
               </form>
@@ -329,7 +409,9 @@ export default function Login() {
                   <div className="w-full border-t border-gray-200 dark:border-gray-800" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase tracking-wider">
-                  <span className="bg-white dark:bg-gray-950 px-4 text-gray-400">Or continue with</span>
+                  <span className="bg-white dark:bg-gray-950 px-4 text-gray-400">
+                    Or continue with
+                  </span>
                 </div>
               </div>
 
@@ -358,9 +440,15 @@ export default function Login() {
               {/* Switch tab */}
               <div className="text-center">
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {tab === "login" ? "Don't have an account? " : "Already have an account? "}
+                  {tab === "login"
+                    ? "Don't have an account? "
+                    : "Already have an account? "}
                   <button
-                    onClick={() => { setTab(tab === "login" ? "register" : "login"); setError(""); setVerifying(false); }}
+                    onClick={() => {
+                      setTab(tab === "login" ? "register" : "login");
+                      setError("");
+                      setVerifying(false);
+                    }}
                     className="text-purple-600 dark:text-purple-400 font-bold hover:underline"
                   >
                     {tab === "login" ? "Create an Account" : "Sign In"}
@@ -371,9 +459,24 @@ export default function Login() {
               {/* Footer */}
               <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
                 <div className="flex justify-center gap-6 text-xs text-gray-400">
-                  <a href="#" className="hover:text-purple-600 transition-colors">Privacy Policy</a>
-                  <a href="#" className="hover:text-purple-600 transition-colors">Terms of Service</a>
-                  <a href="#" className="hover:text-purple-600 transition-colors">Support</a>
+                  <a
+                    href="#"
+                    className="hover:text-purple-600 transition-colors"
+                  >
+                    Privacy Policy
+                  </a>
+                  <a
+                    href="#"
+                    className="hover:text-purple-600 transition-colors"
+                  >
+                    Terms of Service
+                  </a>
+                  <a
+                    href="#"
+                    className="hover:text-purple-600 transition-colors"
+                  >
+                    Support
+                  </a>
                 </div>
                 <p className="text-center text-xs text-gray-400 mt-2">
                   © 2024 GriefWallet Financial Guardianship Services

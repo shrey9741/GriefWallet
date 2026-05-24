@@ -22,6 +22,10 @@ export default function App() {
             />
           }
         />
+        <Route
+          path="/login#/continue"
+          element={<Navigate to="/dashboard" replace />}
+        />
         <Route path="/dashboard" element={
           <ProtectedRoute><Dashboard /></ProtectedRoute>
         } />
