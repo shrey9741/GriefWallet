@@ -13,7 +13,15 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/sso-callback" element={<AuthenticateWithRedirectCallback />} />
+        <Route
+          path="/sso-callback"
+          element={
+            <AuthenticateWithRedirectCallback
+              afterSignInUrl="/dashboard"
+              afterSignUpUrl="/dashboard"
+            />
+          }
+        />
         <Route path="/dashboard" element={
           <ProtectedRoute><Dashboard /></ProtectedRoute>
         } />

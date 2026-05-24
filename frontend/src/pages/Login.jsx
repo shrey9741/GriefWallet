@@ -86,17 +86,17 @@ export default function Login() {
   };
 
   const handleGoogle = async () => {
-    if (!signInLoaded) return;
-    try {
-      await signIn.authenticateWithRedirect({
-        strategy: "oauth_google",
-        redirectUrl: "/sso-callback",
-        redirectUrlComplete: "/dashboard",
-      });
-    } catch (err) {
-      setError("Google sign-in failed. Try again.");
-    }
-  };
+  if (!signInLoaded) return;
+  try {
+    await signIn.authenticateWithRedirect({
+      strategy: "oauth_google",
+      redirectUrl: `${window.location.origin}/sso-callback`,
+      redirectUrlComplete: `${window.location.origin}/dashboard`,
+    });
+  } catch (err) {
+    setError("Google sign-in failed. Try again.");
+  }
+};
 
   const handleSubmit = async (e) => {
     e.preventDefault();
