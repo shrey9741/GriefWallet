@@ -25,4 +25,5 @@ class Task(Base):
     created_at       = Column(DateTime, default=datetime.utcnow)
     updated_at       = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+
     case = relationship("Case", back_populates="tasks")
