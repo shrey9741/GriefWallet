@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSignIn, useSignUp } from "@clerk/clerk-react";
+import { useSignIn, useSignUp, useAuth } from "@clerk/clerk-react";
 
 export default function Login() {
   const [tab, setTab] = useState("login");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [verifyCode, setVerifyCode] = useState("");
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -15,14 +17,18 @@ export default function Login() {
 
   const { signIn, isLoaded: signInLoaded } = useSignIn();
   const { signUp, isLoaded: signUpLoaded } = useSignUp();
+  const { isSignedIn } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isSignedIn) navigate("/dashboard");
+  }, [isSignedIn]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setError("");
   };
 
-  // ── Email/Password Login ──────────────────────────────────────────
   const handleLogin = async () => {
     if (!signInLoaded) return;
     try {
@@ -38,35 +44,47 @@ export default function Login() {
     }
   };
 
-  // ── Email/Password Register ───────────────────────────────────────
-
   const handleRegister = async () => {
     if (!signUpLoaded) return;
     try {
       const nameParts = form.full_name.trim().split(" ");
       const firstName = nameParts[0] || "";
       const lastName = nameParts.slice(1).join(" ") || "";
-
       const result = await signUp.create({
         emailAddress: form.email,
         password: form.password,
         firstName,
         lastName,
       });
-
       if (result.status === "complete") {
         navigate("/dashboard");
       } else {
-        // Email verification needed
         await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-        setError("Check your email for a verification code.");
+        setVerifying(true);
+        setError("");
       }
     } catch (err) {
       setError(err.errors?.[0]?.message || "Registration failed. Try again.");
     }
   };
 
-  // ── Google OAuth ──────────────────────────────────────────────────
+  const handleVerify = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const result = await signUp.attemptEmailAddressVerification({
+        code: verifyCode,
+      });
+      if (result.status === "complete") {
+        navigate("/dashboard");
+      }
+    } catch (err) {
+      setError(err.errors?.[0]?.message || "Invalid code. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGoogle = async () => {
     if (!signInLoaded) return;
     try {
@@ -98,7 +116,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex flex-col md:flex-row overflow-hidden bg-white dark:bg-gray-950">
 
-      {/* Left Side — Image + Testimonial */}
+      {/* Left Side */}
       <section className="hidden md:flex md:w-1/2 lg:w-3/5 relative flex-col justify-end p-10">
         <div className="absolute inset-0 z-0">
           <img
@@ -132,24 +150,19 @@ export default function Login() {
         </div>
       </section>
 
-      {/* Right Side — Form */}
+      {/* Right Side */}
       <main className="w-full md:w-1/2 lg:w-2/5 flex flex-col justify-center bg-white dark:bg-gray-950 px-6 md:px-12 py-10 min-h-screen overflow-y-auto">
         <div className="max-w-md mx-auto w-full">
 
-          {/* Brand */}
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-              GriefWallet
-            </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Financial guardianship with security and empathy.
-            </p>
+            <h1 className="text-2xl font-bold text-purple-600 dark:text-purple-400">GriefWallet</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Financial guardianship with security and empathy.</p>
           </div>
 
           {/* Tabs */}
           <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-800">
             <button
-              onClick={() => { setTab("login"); setError(""); }}
+              onClick={() => { setTab("login"); setError(""); setVerifying(false); }}
               className={`pb-2 px-1 text-sm font-semibold transition-all border-b-2 ${
                 tab === "login"
                   ? "border-purple-600 text-purple-600 dark:text-purple-400 dark:border-purple-400"
@@ -159,7 +172,7 @@ export default function Login() {
               Sign In
             </button>
             <button
-              onClick={() => { setTab("register"); setError(""); }}
+              onClick={() => { setTab("register"); setError(""); setVerifying(false); }}
               className={`pb-2 px-1 text-sm font-semibold transition-all border-b-2 ${
                 tab === "register"
                   ? "border-purple-600 text-purple-600 dark:text-purple-400 dark:border-purple-400"
@@ -170,13 +183,14 @@ export default function Login() {
             </button>
           </div>
 
-          {/* Heading */}
           <div className="mb-6">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              {tab === "login" ? "Welcome Back" : "Get Started"}
+              {verifying ? "Verify Your Email" : tab === "login" ? "Welcome Back" : "Get Started"}
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {tab === "login"
+              {verifying
+                ? "Enter the 6-digit code sent to your email."
+                : tab === "login"
                 ? "Please enter your credentials to access the guardian dashboard."
                 : "Create your account to start managing recovery cases."}
             </p>
@@ -189,154 +203,184 @@ export default function Login() {
             </div>
           )}
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-
-            {/* Full Name — register only */}
-            {tab === "register" && (
+          {/* Verification UI */}
+          {verifying ? (
+            <div className="space-y-4">
+              <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-sm text-blue-700 dark:text-blue-300">
+                Check your email inbox for a 6-digit verification code from Clerk.
+              </div>
               <div className="flex flex-col">
                 <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 uppercase tracking-wide">
-                  Full Name
+                  Verification Code
                 </label>
                 <input
                   type="text"
-                  name="full_name"
-                  value={form.full_name}
-                  onChange={handleChange}
-                  placeholder="Sunita Sharma"
-                  required
-                  className="h-12 px-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all"
+                  value={verifyCode}
+                  onChange={(e) => setVerifyCode(e.target.value)}
+                  placeholder="000000"
+                  maxLength={6}
+                  className="h-12 px-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-lg text-center tracking-widest focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all"
                 />
               </div>
-            )}
-
-            {/* Email */}
-            <div className="flex flex-col">
-              <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 uppercase tracking-wide">
-                Email Address
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="name@organization.com"
-                required
-                className="h-12 px-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all"
-              />
+              <button
+                onClick={handleVerify}
+                disabled={loading || verifyCode.length < 6}
+                className="w-full h-12 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                    Verifying...
+                  </span>
+                ) : "✓ Verify Email"}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setVerifying(false); setVerifyCode(""); setError(""); }}
+                className="w-full text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              >
+                ← Back
+              </button>
             </div>
-
-            {/* Password */}
-            <div className="flex flex-col">
-              <div className="flex justify-between items-center mb-1">
-                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                  Password
-                </label>
-                {tab === "login" && (
-                  <a href="#" className="text-xs text-purple-600 dark:text-purple-400 hover:underline">
-                    Forgot Password?
-                  </a>
+          ) : (
+            <>
+              {/* Main Form */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {tab === "register" && (
+                  <div className="flex flex-col">
+                    <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 uppercase tracking-wide">Full Name</label>
+                    <input
+                      type="text"
+                      name="full_name"
+                      value={form.full_name}
+                      onChange={handleChange}
+                      placeholder="Sunita Sharma"
+                      required
+                      className="h-12 px-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all"
+                    />
+                  </div>
                 )}
+
+                <div className="flex flex-col">
+                  <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 uppercase tracking-wide">Email Address</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    placeholder="name@organization.com"
+                    required
+                    className="h-12 px-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all"
+                  />
+                </div>
+
+                <div className="flex flex-col">
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Password</label>
+                    {tab === "login" && (
+                      <a href="#" className="text-xs text-purple-600 dark:text-purple-400 hover:underline">Forgot Password?</a>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      value={form.password}
+                      onChange={handleChange}
+                      placeholder="••••••••"
+                      required
+                      className="w-full h-12 px-4 pr-12 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    >
+                      {showPassword ? "🙈" : "👁"}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-12 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-sm"
+                >
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                      </svg>
+                      {tab === "login" ? "Signing in..." : "Creating account..."}
+                    </span>
+                  ) : (
+                    <>🔒 {tab === "login" ? "Secure Sign In" : "Create Account"}</>
+                  )}
+                </button>
+              </form>
+
+              {/* Divider */}
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200 dark:border-gray-800" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase tracking-wider">
+                  <span className="bg-white dark:bg-gray-950 px-4 text-gray-400">Or continue with</span>
+                </div>
               </div>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  value={form.password}
-                  onChange={handleChange}
-                  placeholder="••••••••"
-                  required
-                  className="w-full h-12 px-4 pr-12 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all"
-                />
+
+              {/* Social */}
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                <button
+                  onClick={handleGoogle}
+                  type="button"
+                  className="flex items-center justify-center gap-2 h-12 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+                >
+                  <img
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYuAws7ZfqS6JIMVt2ZGSepb4vZ_ezRhxeQLy9QIYvKnhtT8_qSdh1Fl8DDejjevx43VFKfhMEOnkcFas7GirbLN5lIM5BJ1Xn8BpGPCvBbBNpzkvDyS6tEDwv_vlWlBhQVz0ytinnI10c6OJDYJt8lS3bwK6FG7IgIWQCBumdQtPvrUnqL8oPGucEzmxTqjjsHcP1-KtW789Ol75O8WUv4aS-9d4kx_RNae2iz2x_YO_7oK91eiJdLdDGYUvHlcOlHW54FroAKWvH"
+                    alt="Google"
+                    className="w-4 h-4"
+                  />
+                  Google
+                </button>
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  className="flex items-center justify-center gap-2 h-12 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
                 >
-                  {showPassword ? "🙈" : "👁"}
+                  🔑 Passkey
                 </button>
               </div>
-            </div>
 
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full h-12 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-sm"
-            >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                  </svg>
-                  {tab === "login" ? "Signing in..." : "Creating account..."}
-                </span>
-              ) : (
-                <>🔒 {tab === "login" ? "Secure Sign In" : "Create Account"}</>
-              )}
-            </button>
-          </form>
+              {/* Switch tab */}
+              <div className="text-center">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {tab === "login" ? "Don't have an account? " : "Already have an account? "}
+                  <button
+                    onClick={() => { setTab(tab === "login" ? "register" : "login"); setError(""); setVerifying(false); }}
+                    className="text-purple-600 dark:text-purple-400 font-bold hover:underline"
+                  >
+                    {tab === "login" ? "Create an Account" : "Sign In"}
+                  </button>
+                </p>
+              </div>
 
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200 dark:border-gray-800" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase tracking-wider">
-              <span className="bg-white dark:bg-gray-950 px-4 text-gray-400">
-                Or continue with
-              </span>
-            </div>
-          </div>
-
-          {/* Google Button */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            <button
-              onClick={handleGoogle}
-              type="button"
-              className="flex items-center justify-center gap-2 h-12 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
-            >
-              <img
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYuAws7ZfqS6JIMVt2ZGSepb4vZ_ezRhxeQLy9QIYvKnhtT8_qSdh1Fl8DDejjevx43VFKfhMEOnkcFas7GirbLN5lIM5BJ1Xn8BpGPCvBbBNpzkvDyS6tEDwv_vlWlBhQVz0ytinnI10c6OJDYJt8lS3bwK6FG7IgIWQCBumdQtPvrUnqL8oPGucEzmxTqjjsHcP1-KtW789Ol75O8WUv4aS-9d4kx_RNae2iz2x_YO_7oK91eiJdLdDGYUvHlcOlHW54FroAKWvH"
-                alt="Google"
-                className="w-4 h-4"
-              />
-              Google
-            </button>
-            <button
-              type="button"
-              className="flex items-center justify-center gap-2 h-12 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
-            >
-              🔑 Passkey
-            </button>
-          </div>
-
-          {/* Switch tab */}
-          <div className="text-center">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {tab === "login" ? "Don't have an account? " : "Already have an account? "}
-              <button
-                onClick={() => { setTab(tab === "login" ? "register" : "login"); setError(""); }}
-                className="text-purple-600 dark:text-purple-400 font-bold hover:underline"
-              >
-                {tab === "login" ? "Create an Account" : "Sign In"}
-              </button>
-            </p>
-          </div>
-
-          {/* Footer */}
-          <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
-            <div className="flex justify-center gap-6 text-xs text-gray-400">
-              <a href="#" className="hover:text-purple-600 transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-purple-600 transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-purple-600 transition-colors">Support</a>
-            </div>
-            <p className="text-center text-xs text-gray-400 mt-2">
-              © 2024 GriefWallet Financial Guardianship Services
-            </p>
-          </div>
-
+              {/* Footer */}
+              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
+                <div className="flex justify-center gap-6 text-xs text-gray-400">
+                  <a href="#" className="hover:text-purple-600 transition-colors">Privacy Policy</a>
+                  <a href="#" className="hover:text-purple-600 transition-colors">Terms of Service</a>
+                  <a href="#" className="hover:text-purple-600 transition-colors">Support</a>
+                </div>
+                <p className="text-center text-xs text-gray-400 mt-2">
+                  © 2024 GriefWallet Financial Guardianship Services
+                </p>
+              </div>
+            </>
+          )}
         </div>
       </main>
     </div>
