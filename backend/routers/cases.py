@@ -16,6 +16,7 @@ router = APIRouter(prefix="/cases", tags=["cases"])
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 
+
 class CreateCaseRequest(BaseModel):
     deceased_name:     str
     date_of_death:     str
