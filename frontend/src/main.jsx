@@ -12,7 +12,14 @@ if (!PUBLISHABLE_KEY) {
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
+    <ClerkProvider
+      publishableKey={PUBLISHABLE_KEY}
+      afterSignInUrl="/dashboard"
+      afterSignUpUrl="/dashboard"
+      signInUrl="/login"
+      signUpUrl="/login"
+      allowedRedirectOrigins={["https://grief-wallet.vercel.app", "http://localhost:5173"]}
+    >
       <App />
     </ClerkProvider>
   </StrictMode>

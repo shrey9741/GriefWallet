@@ -1,8 +1,9 @@
 import { useAuth } from "@clerk/clerk-react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
 export default function ProtectedRoute({ children }) {
   const { isLoaded, isSignedIn } = useAuth();
+  const location = useLocation();
 
   if (!isLoaded) {
     return (
@@ -15,6 +16,9 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  if (!isSignedIn) return <Navigate to="/login" replace />;
+  if (!isSignedIn) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
   return children;
 }
