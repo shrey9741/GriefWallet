@@ -1,4 +1,3 @@
-import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { ClerkProvider } from "@clerk/clerk-react";
 import "./index.css";
@@ -11,16 +10,14 @@ if (!PUBLISHABLE_KEY) {
 }
 
 createRoot(document.getElementById("root")).render(
-  <StrictMode>
-    <ClerkProvider
-      publishableKey={PUBLISHABLE_KEY}
-      afterSignInUrl="/dashboard"
-      afterSignUpUrl="/dashboard"
-      signInUrl="/login"
-      signUpUrl="/login"
-      allowedRedirectOrigins={["https://grief-wallet.vercel.app", "http://localhost:5173"]}
-    >
-      <App />
-    </ClerkProvider>
-  </StrictMode>
+  <ClerkProvider
+    publishableKey={PUBLISHABLE_KEY}
+    afterSignInUrl="/dashboard"
+    afterSignUpUrl="/dashboard"
+    signInUrl="/login"
+    signUpUrl="/login"
+    allowedRedirectOrigins={["https://grief-wallet.vercel.app", "http://localhost:5173"]}
+  >
+    <App />
+  </ClerkProvider>
 );
