@@ -23,16 +23,8 @@ export default function Login() {
   useEffect(() => {
     if (isSignedIn) {
       navigate("/dashboard");
-      return;
     }
-    // Handle Clerk hash redirect after Google OAuth
-    if (
-      window.location.hash.includes("continue") ||
-      window.location.hash.includes("token")
-    ) {
-      navigate("/dashboard");
-    }
-  }, [isSignedIn, window.location.hash]);
+  }, [isSignedIn]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
