@@ -15,8 +15,9 @@ export default function Login() {
     full_name: "",
   });
 
-  const { signIn, isLoaded: signInLoaded } = useSignIn();
-  const { signUp, isLoaded: signUpLoaded } = useSignUp();
+  // setActive is required to actually start the session after sign-in/sign-up
+  const { signIn, setActive: setActiveSignIn, isLoaded: signInLoaded } = useSignIn();
+  const { signUp, setActive: setActiveSignUp, isLoaded: signUpLoaded } = useSignUp();
   const { isSignedIn } = useAuth();
   const navigate = useNavigate();
 
@@ -25,6 +26,12 @@ export default function Login() {
       navigate("/dashboard");
     }
   }, [isSignedIn]);
+
+  // Pull the most useful message out of a Clerk error
+  const getClerkMessage = (err, fallback) => {
+    const first = err?.errors?.[0];
+    return first?.longMessage || first?.message || fallback;
+  };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -39,12 +46,15 @@ export default function Login() {
         password: form.password,
       });
       if (result.status === "complete") {
+        await setActiveSignIn({ session: result.createdSessionId });
         navigate("/dashboard");
+      } else {
+        console.log("CLERK LOGIN INCOMPLETE:", result.status, result);
+        setError("Additional verification required. Please try again.");
       }
     } catch (err) {
-      setError(
-        err.errors?.[0]?.message || "Login failed. Check your credentials.",
-      );
+      console.error("CLERK LOGIN ERROR:", JSON.stringify(err?.errors, null, 2));
+      setError(getClerkMessage(err, "Login failed. Check your credentials."));
     }
   };
 
@@ -61,6 +71,7 @@ export default function Login() {
         lastName,
       });
       if (result.status === "complete") {
+        await setActiveSignUp({ session: result.createdSessionId });
         navigate("/dashboard");
       } else {
         await signUp.prepareEmailAddressVerification({
@@ -70,7 +81,9 @@ export default function Login() {
         setError("");
       }
     } catch (err) {
-      setError(err.errors?.[0]?.message || "Registration failed. Try again.");
+      // Open DevTools > Console to see exactly which field Clerk rejected
+      console.error("CLERK SIGNUP ERROR:", JSON.stringify(err?.errors, null, 2));
+      setError(getClerkMessage(err, "Registration failed. Try again."));
     }
   };
 
@@ -82,10 +95,17 @@ export default function Login() {
         code: verifyCode,
       });
       if (result.status === "complete") {
+        await setActiveSignUp({ session: result.createdSessionId });
         navigate("/dashboard");
+      } else {
+        console.log("CLERK VERIFY INCOMPLETE:", result.status, result);
+        setError(
+          "Sign-up isn't complete yet. Check Clerk settings for required fields.",
+        );
       }
     } catch (err) {
-      setError(err.errors?.[0]?.message || "Invalid code. Try again.");
+      console.error("CLERK VERIFY ERROR:", JSON.stringify(err?.errors, null, 2));
+      setError(getClerkMessage(err, "Invalid code. Try again."));
     } finally {
       setLoading(false);
     }
@@ -100,7 +120,8 @@ export default function Login() {
         redirectUrlComplete: `${window.location.origin}/dashboard`,
       });
     } catch (err) {
-      setError("Google sign-in failed. Try again.");
+      console.error("CLERK GOOGLE ERROR:", JSON.stringify(err?.errors, null, 2));
+      setError(getClerkMessage(err, "Google sign-in failed. Try again."));
     }
   };
 
@@ -356,6 +377,9 @@ export default function Login() {
                     </button>
                   </div>
                 </div>
+
+                {/* Required by Clerk for bot protection in custom sign-up flows */}
+                {tab === "register" && <div id="clerk-captcha" />}
 
                 <button
                   type="submit"
