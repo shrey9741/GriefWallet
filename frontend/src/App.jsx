@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom"; // no BrowserRouter 
 import { AuthenticateWithRedirectCallback } from "@clerk/clerk-react";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
+import Privacy from "./pages/Privacy";
 import Dashboard from "./pages/Dashboard";
 import CreateCase from "./pages/CreateCase";
 import CaseDetail from "./pages/CaseDetail";
@@ -13,6 +14,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/privacy" element={<Privacy />} />
       <Route
         path="/sso-callback"
         element={
