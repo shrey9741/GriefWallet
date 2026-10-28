@@ -109,15 +109,7 @@ export default function CreateCase() {
     setError("");
 
     try {
-      const token = await user?.getToken();
-      if (!token) {
-        setError("Authentication failed. Please refresh and try again.");
-        setLoading(false);
-        return;
-      }
-      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      if (token)
-        api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      // The Clerk token is attached automatically by the api.js interceptor
 
       // Step 1 — create case
       const caseRes = await api.post("/cases/create", {
