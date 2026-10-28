@@ -1,6 +1,8 @@
 // App.jsx
+import { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom"; // no BrowserRouter import
-import { AuthenticateWithRedirectCallback } from "@clerk/clerk-react";
+import { AuthenticateWithRedirectCallback, useAuth } from "@clerk/clerk-react";
+import { setTokenGetter } from "./api";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Privacy from "./pages/Privacy";
@@ -11,6 +13,13 @@ import Documents from "./pages/Documents";
 import Timeline from "./pages/Timeline";
 
 export default function App() {
+  const { getToken } = useAuth();
+
+  // Give the API client a way to fetch the current Clerk token
+  useEffect(() => {
+    setTokenGetter(() => getToken());
+  }, [getToken]);
+
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
