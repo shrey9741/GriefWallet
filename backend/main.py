@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -17,16 +19,24 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# CORS — allow frontend to talk to backend
+# CORS: exact origins only (wildcards like *.vercel.app are not supported here)
+origins = [
+    o.strip()
+    for o in os.getenv(
+        "FRONTEND_ORIGINS",
+        "http://localhost:5173,https://griefwallet.in,https://www.griefwallet.in",
+    ).split(",")
+    if o.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "https://*.vercel.app"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Register all routers
 app.include_router(auth.router)
 app.include_router(cases.router)
 app.include_router(tasks.router)
