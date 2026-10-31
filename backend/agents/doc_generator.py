@@ -1,3 +1,4 @@
+import os
 import re
 import uuid
 
@@ -23,10 +24,12 @@ DOCUMENT_TYPE_MAP = {
 
 
 def get_llm() -> ChatGroq:
+    # llama-3.3-70b-versatile was retired by Groq (Aug 2026); override via GROQ_MODEL if needed
     return ChatGroq(
-        model="llama-3.3-70b-versatile",
-        max_tokens=2048,
+        model=os.getenv("GROQ_MODEL", "openai/gpt-oss-120b"),
+        max_tokens=4096,  # reasoning models spend part of this budget on thinking
         temperature=0.1,
+        reasoning_effort="low",
     )
 
 
