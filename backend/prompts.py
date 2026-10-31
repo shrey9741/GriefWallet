@@ -98,7 +98,10 @@ Generate a {document_type} letter for this case.
 CASE:
 - Deceased: {case_input['deceased_name']}
 - Date of death: {case_input['date_of_death']}
-- Nominee: {case_input['nominee_name']} ({case_input['nominee_relation']})
+- Nominee (the person writing this letter): {case_input['nominee_name']}
+- Relationship: the nominee is the {case_input['nominee_relation']} OF the deceased
+  (e.g. if the relation is "parent", the nominee is the deceased's parent and the deceased is the
+  nominee's child; never describe it the other way round)
 
 INSTITUTION: {task['institution']}
 TASK: {task['title']}
@@ -109,7 +112,7 @@ INSTITUTION KNOWLEDGE:
 REQUIREMENTS:
 1. Use formal Indian letter format: To, Subject, Salutation, Body, Yours faithfully
 2. 200 to 300 words
-3. Use [PLACEHOLDER_NAME] for fields user must fill (account numbers, branch name, phone)
+3. Use capitalised square-bracket placeholders such as [BRANCH_NAME], [ACCOUNT_NUMBER], [PHONE] for fields the user must fill (do not prefix them with PLACEHOLDER)
 4. List all enclosures at the end
 5. Do NOT invent legal claims
 6. Tone: respectful, clear, firm
