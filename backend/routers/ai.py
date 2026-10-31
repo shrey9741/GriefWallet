@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -9,6 +11,11 @@ from models.task import Task
 from models.document import Document
 from routers.auth import get_current_user
 from graph import run_case, run_advisor_only
+from agents.classifier import load_knowledge
+from agents.doc_generator import DOCUMENT_TYPE_MAP, generate_letter
+
+logger = logging.getLogger(__name__)
+AI_UNAVAILABLE = "The AI service is unavailable right now. Please try again in a minute."
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -52,7 +59,11 @@ def generate_checklist(
     }
 
     # Run the full agent graph
-    result = run_case(case_input)
+    try:
+        result = run_case(case_input)
+    except Exception:
+        logger.exception("generate-checklist failed for case %s", case.id)
+        raise HTTPException(status_code=502, detail=AI_UNAVAILABLE)
 
     # Save global flags to case
     case.global_flags = result.get("global_flags", [])
@@ -140,5 +151,85 @@ def generate_insight(
         for t in tasks
     ]
 
-    insight = run_advisor_only(case_input, tasks_list, case.global_flags or [])
+    try:
+        insight = run_advisor_only(case_input, tasks_list, case.global_flags or [])
+    except Exception:
+        logger.exception("generate-insight failed for case %s", case.id)
+        raise HTTPException(status_code=502, detail=AI_UNAVAILABLE)
     return {"insight": insight}
+
+
+@router.post("/generate-document")
+def generate_document(
+    req: GenerateDocumentRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Draft a letter for one task on demand (works even while the task is blocked)."""
+    case = db.query(Case).filter(
+        Case.id == req.case_id,
+        Case.user_id == current_user.id
+    ).first()
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    task = db.query(Task).filter(Task.id == req.task_id, Task.case_id == case.id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    doc_type = req.document_type or DOCUMENT_TYPE_MAP.get(task.institution.upper())
+    if not doc_type:
+        raise HTTPException(status_code=400, detail=f"No letter template for {task.institution}")
+
+    case_input = {
+        "deceased_name":    case.deceased_name,
+        "date_of_death":    case.date_of_death,
+        "pan_available":    case.pan_available == "true",
+        "phone":            None,
+        "institutions":     case.institutions or [],
+        "nominee_name":     case.nominee_name,
+        "nominee_relation": case.nominee_relation,
+        "multiple_nominees": case.multiple_nominees == "true",
+        "will_exists":      case.will_exists == "true",
+        "will_disputed":    case.will_disputed == "true",
+        "docs_available":   case.docs_available or [],
+    }
+    task_dict = {
+        "institution": task.institution,
+        "title":       task.title,
+        "priority":    task.priority,
+        "status":      task.status,
+    }
+
+    try:
+        result = generate_letter(case_input, task_dict, load_knowledge(task.institution), doc_type)
+    except Exception:
+        logger.exception("generate-document failed for task %s", task.id)
+        raise HTTPException(status_code=502, detail=AI_UNAVAILABLE)
+
+    # one letter per institution and type: replace any earlier draft
+    db.query(Document).filter(
+        Document.case_id == case.id,
+        Document.institution == task.institution,
+        Document.document_type == doc_type,
+    ).delete()
+
+    doc = Document(
+        case_id=case.id,
+        institution=task.institution,
+        document_type=doc_type,
+        content=result["content"],
+        placeholders_remaining=result["placeholders_remaining"],
+    )
+    db.add(doc)
+    db.commit()
+    db.refresh(doc)
+
+    return {
+        "id":                     doc.id,
+        "institution":            doc.institution,
+        "document_type":          doc.document_type,
+        "content":                doc.content,
+        "placeholders_remaining": doc.placeholders_remaining,
+        "created_at":             doc.created_at,
+    }
