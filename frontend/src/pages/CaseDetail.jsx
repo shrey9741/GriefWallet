@@ -106,9 +106,17 @@ const errMsg = (err, fallback) => err?.response?.data?.detail || fallback;
 
 const docText = (d) => (typeof d === "string" ? d : d?.doc || JSON.stringify(d));
 
+// Institutions the backend has a letter template for (keep in sync with DOCUMENT_TYPE_MAP)
+const LETTER_INSTITUTIONS = new Set(["SBI", "HDFC", "ICICI", "LIC", "EPFO", "NPS", "MUTUAL FUNDS", "SBI MF"]);
+
+const DOC_LABELS = { death_certificate: "Death certificate", aadhaar: "Aadhaar", pan: "PAN" };
+const prettyDoc = (s) =>
+  DOC_LABELS[String(s).toLowerCase()] ||
+  String(s).replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+
 // ── task card ────────────────────────────────────────────────────────────────
 
-function TaskCard({ task, titleById, openBlockers, onStatus, saving, defaultOpen }) {
+function TaskCard({ task, titleById, openBlockers, onStatus, saving, defaultOpen, canDraft, hasLetter, drafting, onDraft, onView }) {
   const [open, setOpen] = useState(defaultOpen);
   const blocked = openBlockers.length > 0;
   const done = task.status === "done";
@@ -182,6 +190,29 @@ function TaskCard({ task, titleById, openBlockers, onStatus, saving, defaultOpen
               </div>
             </div>
           )}
+
+          {canDraft && (
+            <div className="mt-3 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onDraft(task)}
+                disabled={drafting}
+                className="text-xs font-semibold text-blue-600 hover:text-blue-700 border border-blue-200 hover:bg-blue-50 rounded-lg px-3 py-1.5 inline-flex items-center gap-1.5 disabled:opacity-60"
+              >
+                {drafting ? <Spinner className="h-3.5 w-3.5" /> : <Icon name="file" className="w-3.5 h-3.5" />}
+                {drafting ? "Drafting…" : hasLetter ? "Redraft letter" : "Draft letter"}
+              </button>
+              {hasLetter && !drafting && (
+                <button
+                  type="button"
+                  onClick={() => onView(task)}
+                  className="text-xs text-gray-500 hover:text-gray-700 underline"
+                >
+                  View letter
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -251,6 +282,7 @@ export default function CaseDetail() {
   const [generating, setGenerating] = useState(false);
   const [insightLoading, setInsightLoading] = useState(false);
   const [savingTask, setSavingTask] = useState(null);
+  const [draftingTask, setDraftingTask] = useState(null);
   const [activeDoc, setActiveDoc] = useState(null);
   const [copied, setCopied] = useState(false);
 
@@ -348,6 +380,31 @@ export default function CaseDetail() {
       setNotice(errMsg(err, "The AI step failed. Please try again in a moment."));
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleDraft = async (task) => {
+    setDraftingTask(task.id);
+    setNotice("");
+    try {
+      const res = await api.post("/ai/generate-document", { case_id: id, task_id: task.id });
+      const docsRes = await api.get(`/documents/${id}`);
+      setDocs(docsRes.data);
+      api.get(`/timeline/${id}`).then((r) => setTimeline(r.data)).catch(() => {});
+      setActiveDoc(res.data.id);
+      setTab("documents");
+    } catch (err) {
+      setNotice(errMsg(err, "Could not draft the letter. Please try again."));
+    } finally {
+      setDraftingTask(null);
+    }
+  };
+
+  const handleViewLetter = (task) => {
+    const d = docs.find((x) => x.institution === task.institution);
+    if (d) {
+      setActiveDoc(d.id);
+      setTab("documents");
     }
   };
 
@@ -550,7 +607,7 @@ export default function CaseDetail() {
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Documents on hand</p>
               <p className="text-gray-800 font-semibold mt-0.5">
-                {(caseData.docs_available || []).length ? caseData.docs_available.join(", ") : "None"}
+                {(caseData.docs_available || []).length ? caseData.docs_available.map(prettyDoc).join(", ") : "None"}
               </p>
             </div>
           </div>
@@ -657,6 +714,11 @@ export default function CaseDetail() {
                               onStatus={handleStatus}
                               saving={savingTask === t.id}
                               defaultOpen={first}
+                              canDraft={LETTER_INSTITUTIONS.has(String(t.institution).toUpperCase())}
+                              hasLetter={docs.some((d) => d.institution === t.institution)}
+                              drafting={draftingTask === t.id}
+                              onDraft={handleDraft}
+                              onView={handleViewLetter}
                             />
                           );
                         })}
@@ -677,7 +739,9 @@ export default function CaseDetail() {
             {tab === "documents" &&
               (docs.length === 0 ? (
                 <div className="bg-white border border-dashed border-gray-300 rounded-xl p-10 text-center text-sm text-gray-500">
-                  No letters generated yet. Generate the recovery plan first.
+                  {total > 0
+                    ? "No letters yet. Open the Tasks tab and use “Draft letter” on a task. You can draft a claim letter even while the task is blocked, and send it once the blocker is cleared."
+                    : "No letters yet. Generate the recovery plan first."}
                 </div>
               ) : (
                 <div className="grid md:grid-cols-3 gap-4">
@@ -724,7 +788,7 @@ export default function CaseDetail() {
                         {selectedDoc.placeholders_remaining?.length > 0 && (
                           <div className="mb-3 text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-3 py-2">
                             <span className="font-semibold">Fill in before sending: </span>
-                            {selectedDoc.placeholders_remaining.join(", ")}
+                            {selectedDoc.placeholders_remaining.map((p) => `[${p}]`).join(", ")}
                           </div>
                         )}
                         <pre className="whitespace-pre-wrap break-words text-[13px] leading-relaxed text-gray-700 font-sans">
