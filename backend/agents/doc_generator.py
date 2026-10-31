@@ -37,6 +37,26 @@ def extract_placeholders(text: str) -> list[str]:
     return re.findall(r"\[([A-Z_\s]+)\]", text)
 
 
+def generate_letter(case_input: dict, task: dict, knowledge: dict, doc_type: str, llm=None) -> GeneratedDocument:
+    """Draft one letter for one task. Used by the pipeline and by the on-demand route."""
+    llm = llm or get_llm()
+    prompt = doc_generator_prompt(
+        case_input=case_input,
+        task=task,
+        institution_knowledge=knowledge,
+        document_type=doc_type,
+    )
+    response = llm.invoke([HumanMessage(content=prompt)])
+    letter = response.content.strip()
+    return {
+        "doc_id":                 f"doc_{str(uuid.uuid4())[:8]}",
+        "institution":            task["institution"],
+        "document_type":          doc_type,
+        "content":                letter,
+        "placeholders_remaining": extract_placeholders(letter),
+    }
+
+
 def doc_generator_node(state: AgentState) -> dict:
     case_input   = state["case_input"]
     tasks        = state["tasks"]
@@ -54,26 +74,9 @@ def doc_generator_node(state: AgentState) -> dict:
     ]
 
     for task in eligible:
-        inst_name  = task["institution"].upper()
-        doc_type   = DOCUMENT_TYPE_MAP.get(inst_name, "claim_letter")
-        knowledge  = knowledge_map.get(task["institution"], {})
-
-        prompt = doc_generator_prompt(
-            case_input=case_input,
-            task=task,
-            institution_knowledge=knowledge,
-            document_type=doc_type,
-        )
-
-        response = llm.invoke([HumanMessage(content=prompt)])
-        letter   = response.content.strip()
-
-        documents.append({
-            "doc_id":                  f"doc_{str(uuid.uuid4())[:8]}",
-            "institution":             task["institution"],
-            "document_type":           doc_type,
-            "content":                 letter,
-            "placeholders_remaining":  extract_placeholders(letter),
-        })
+        inst_name = task["institution"].upper()
+        doc_type  = DOCUMENT_TYPE_MAP.get(inst_name, "claim_letter")
+        knowledge = knowledge_map.get(task["institution"], {})
+        documents.append(generate_letter(case_input, task, knowledge, doc_type, llm=llm))
 
     return {"documents": documents}
