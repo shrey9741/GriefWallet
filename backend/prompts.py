@@ -84,6 +84,24 @@ Respond ONLY with valid JSON. No explanation, no markdown.
 }}"""
 
 
+RELATION_WORDS = {
+    "spouse": "spouse",
+    "son": "son",
+    "daughter": "daughter",
+    "parent": "parent",
+    "sibling": "sibling",
+}
+
+
+def nominee_intro(nominee_name: str, relation: str, deceased_name: str) -> str:
+    """Build the one sentence that states the relationship, so the model never has to."""
+    word = RELATION_WORDS.get(str(relation).strip().lower())
+    if word:
+        return f"I, {nominee_name}, {word} of the late {deceased_name}"
+    return f"I, {nominee_name}, the nominee of the late {deceased_name}"
+
+
+
 def doc_generator_prompt(
     case_input: dict,
     task: dict,
@@ -98,10 +116,12 @@ Generate a {document_type} letter for this case.
 CASE:
 - Deceased: {case_input['deceased_name']}
 - Date of death: {case_input['date_of_death']}
-- Nominee (the person writing this letter): {case_input['nominee_name']}
-- Relationship: the nominee is the {case_input['nominee_relation']} OF the deceased
-  (e.g. if the relation is "parent", the nominee is the deceased's parent and the deceased is the
-  nominee's child; never describe it the other way round)
+- Nominee (the person writing this letter, in the first person): {case_input['nominee_name']}
+- REQUIRED INTRODUCTION: the body must introduce the nominee with exactly this phrase:
+  "{nominee_intro(case_input['nominee_name'], case_input['nominee_relation'], case_input['deceased_name'])}"
+- KINSHIP RULE: use that phrase only. Everywhere else refer to the deceased by name or as
+  "the deceased" or "the account holder". Never write words such as father, mother, husband,
+  wife, son, daughter, brother or sister.
 
 INSTITUTION: {task['institution']}
 TASK: {task['title']}
