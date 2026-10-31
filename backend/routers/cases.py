@@ -161,3 +161,20 @@ def get_case(
         "created_at": case.created_at,
         "updated_at": case.updated_at,
     }
+
+
+@router.delete("/{case_id}")
+def delete_case(
+    case_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    case = db.query(Case).filter(
+        Case.id == case_id,
+        Case.user_id == current_user.id
+    ).first()
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    db.delete(case)  # tasks and documents are removed by the cascade
+    db.commit()
+    return {"message": "Case deleted"}
