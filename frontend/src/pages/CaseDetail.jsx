@@ -757,7 +757,7 @@ export default function CaseDetail() {
                         }`}
                       >
                         <p className="font-semibold text-gray-900">{d.institution}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{d.document_type}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{prettyDoc(d.document_type)}</p>
                       </button>
                     ))}
                   </div>
@@ -766,7 +766,7 @@ export default function CaseDetail() {
                       <>
                         <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
                           <h4 className="font-semibold text-gray-900 text-sm">
-                            {selectedDoc.institution} · {selectedDoc.document_type}
+                            {selectedDoc.institution} · {prettyDoc(selectedDoc.document_type)}
                           </h4>
                           <div className="flex gap-2">
                             <button
