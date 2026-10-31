@@ -37,6 +37,19 @@ def extract_placeholders(text: str) -> list[str]:
     return re.findall(r"\[([A-Z_\s]+)\]", text)
 
 
+KINSHIP_WORDS = {
+    "father", "mother", "husband", "wife", "son", "daughter",
+    "brother", "sister", "parent", "spouse", "sibling", "widow", "widower",
+}
+
+
+def kinship_violations(text: str, relation: str) -> list[str]:
+    """Kinship words other than the nominee's own relation: a sign the model reversed it."""
+    allowed = {str(relation).strip().lower()}
+    words = set(re.findall(r"\b[a-z]+\b", text.lower()))
+    return sorted((words & KINSHIP_WORDS) - allowed)
+
+
 def generate_letter(case_input: dict, task: dict, knowledge: dict, doc_type: str, llm=None) -> GeneratedDocument:
     """Draft one letter for one task. Used by the pipeline and by the on-demand route."""
     llm = llm or get_llm()
@@ -46,14 +59,31 @@ def generate_letter(case_input: dict, task: dict, knowledge: dict, doc_type: str
         institution_knowledge=knowledge,
         document_type=doc_type,
     )
-    response = llm.invoke([HumanMessage(content=prompt)])
-    letter = response.content.strip()
+    relation = case_input.get("nominee_relation", "")
+
+    letter = llm.invoke([HumanMessage(content=prompt)]).content.strip()
+    bad = kinship_violations(letter, relation)
+
+    if bad:  # one retry with a pointed correction
+        retry = (
+            prompt
+            + f"\n\nCORRECTION: your previous draft used the words {', '.join(bad)}, which can misstate "
+            "the relationship. Rewrite the whole letter without them. Refer to the deceased only by "
+            "name, or as 'the deceased' or 'the account holder'."
+        )
+        letter = llm.invoke([HumanMessage(content=retry)]).content.strip()
+        bad = kinship_violations(letter, relation)
+
+    placeholders = extract_placeholders(letter)
+    if bad:  # still wrong: keep the draft but make the user check it
+        placeholders.append("REVIEW_RELATIONSHIP_WORDING")
+
     return {
         "doc_id":                 f"doc_{str(uuid.uuid4())[:8]}",
         "institution":            task["institution"],
         "document_type":          doc_type,
         "content":                letter,
-        "placeholders_remaining": extract_placeholders(letter),
+        "placeholders_remaining": placeholders,
     }
 
 
