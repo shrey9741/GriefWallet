@@ -1,3 +1,4 @@
+import os
 import json
 import re
 import uuid
@@ -10,10 +11,12 @@ from prompts import planner_prompt
 
 
 def get_llm() -> ChatGroq:
+    # llama-3.3-70b-versatile was retired by Groq (Aug 2026); override via GROQ_MODEL if needed
     return ChatGroq(
-        model="llama-3.3-70b-versatile",
-        max_tokens=4096,
+        model=os.getenv("GROQ_MODEL", "openai/gpt-oss-120b"),
+        max_tokens=8192,  # reasoning models spend part of this budget on thinking
         temperature=0,
+        reasoning_effort="low",
     )
 
 
