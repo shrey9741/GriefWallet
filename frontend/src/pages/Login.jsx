@@ -473,6 +473,7 @@ export default function Login() {
               </div>
 
 
+
               {/* Footer */}
               <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
                 <div className="flex justify-center gap-6 text-xs text-gray-400">
