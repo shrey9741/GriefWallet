@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-const UPDATED = "27 October 2026";
+const UPDATED = "3 November 2026";
 const CONTACT = "shreykr03@gmail.com";
 
 export default function Privacy() {
@@ -56,6 +56,11 @@ export default function Privacy() {
           <li>
             To generate suggestions and draft documents with AI. Case text you submit for
             this purpose is sent to our AI provider only to produce your result.
+          </li>
+          <li>
+            To read a death certificate image if you choose to upload one. The image is sent
+            to our AI provider to extract the name and date of death, is processed in memory
+            and is not stored by GriefWallet. You always review the details before saving.
           </li>
         </ul>
 
