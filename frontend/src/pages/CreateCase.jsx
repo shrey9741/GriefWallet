@@ -65,6 +65,8 @@ export default function CreateCase() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [activeStep, setActiveStep] = useState(1);
+  const [cert, setCert] = useState({ status: "idle", message: "", warnings: [] });
+  const [aiFilled, setAiFilled] = useState({ name: false, date: false });
 
   const toggleInstitution = (id) => {
     setForm((prev) => ({
@@ -89,6 +91,42 @@ export default function CreateCase() {
       ...prev,
       institutions: INSTITUTIONS.map((i) => i.id),
     }));
+  };
+
+
+  const handleCertificate = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      return setCert({ status: "error", message: "Please choose a JPG, PNG or WEBP image.", warnings: [] });
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      return setCert({ status: "error", message: "That image is too large (max 8 MB).", warnings: [] });
+    }
+    setCert({ status: "reading", message: "", warnings: [] });
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const { data } = await api.post("/ai/extract-certificate", fd);
+      setForm((prev) => ({
+        ...prev,
+        deceased_name: data.deceased_name || prev.deceased_name,
+        date_of_death: data.date_of_death || prev.date_of_death,
+        docs_available: prev.docs_available.includes("death_certificate")
+          ? prev.docs_available
+          : [...prev.docs_available, "death_certificate"],
+      }));
+      setAiFilled({ name: !!data.deceased_name, date: !!data.date_of_death });
+      setCert({ status: "done", message: "", warnings: data.warnings || [] });
+    } catch (err) {
+      const detail = err?.response?.data?.detail;
+      setCert({
+        status: "error",
+        message: typeof detail === "string" ? detail : "Could not read the certificate. You can enter the details manually.",
+        warnings: [],
+      });
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -267,6 +305,46 @@ export default function CreateCase() {
                 <h2 className="text-base font-bold text-gray-900 mb-4">
                   Step 1: Deceased Information
                 </h2>
+                <div className="mb-5 rounded-lg border border-dashed border-blue-200 bg-blue-50/50 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">
+                        Upload death certificate (optional)
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        We read the name and date to fill the form for you. The image is sent
+                        to our AI provider to be read and is not stored.
+                      </p>
+                    </div>
+                    <label
+                      className={`shrink-0 h-9 px-4 rounded-lg text-sm font-semibold inline-flex items-center cursor-pointer ${
+                        cert.status === "reading"
+                          ? "bg-gray-200 text-gray-500 pointer-events-none"
+                          : "bg-blue-600 text-white hover:bg-blue-700"
+                      }`}
+                    >
+                      {cert.status === "reading" ? "Reading..." : "Choose image"}
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={handleCertificate}
+                        disabled={cert.status === "reading"}
+                      />
+                    </label>
+                  </div>
+                  {cert.status === "done" && (
+                    <p className="text-xs text-blue-700 mt-3">
+                      Details filled from your certificate. Please check them below before continuing.
+                    </p>
+                  )}
+                  {cert.warnings.map((w) => (
+                    <p key={w} className="text-xs text-amber-700 mt-1">{w}</p>
+                  ))}
+                  {cert.status === "error" && (
+                    <p className="text-xs text-red-600 mt-3">{cert.message}</p>
+                  )}
+                </div>
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="text-xs font-medium text-gray-600 mb-1 block">
@@ -275,11 +353,12 @@ export default function CreateCase() {
                     <input
                       type="text"
                       value={form.deceased_name}
-                      onChange={(e) =>
-                        setForm({ ...form, deceased_name: e.target.value })
-                      }
+                      onChange={(e) => {
+                        setForm({ ...form, deceased_name: e.target.value });
+                        setAiFilled((a) => ({ ...a, name: false }));
+                      }}
                       placeholder="As per Death Certificate"
-                      className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                      className={`w-full h-10 px-3 rounded-lg border text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all ${aiFilled.name ? "border-amber-400 bg-amber-50" : "border-gray-200"}`}
                     />
                   </div>
                   <div>
@@ -289,10 +368,11 @@ export default function CreateCase() {
                     <input
                       type="date"
                       value={form.date_of_death}
-                      onChange={(e) =>
-                        setForm({ ...form, date_of_death: e.target.value })
-                      }
-                      className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                      onChange={(e) => {
+                        setForm({ ...form, date_of_death: e.target.value });
+                        setAiFilled((a) => ({ ...a, date: false }));
+                      }}
+                      className={`w-full h-10 px-3 rounded-lg border text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all ${aiFilled.date ? "border-amber-400 bg-amber-50" : "border-gray-200"}`}
                     />
                   </div>
                 </div>
