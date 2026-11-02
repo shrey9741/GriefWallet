@@ -123,6 +123,8 @@ CASE:
   "the deceased" or "the account holder". Never write words such as father, mother, husband,
   wife, son, daughter, brother or sister.
 
+- PAN of the deceased available: {"yes" if case_input.get('pan_available') else "NO"}
+
 INSTITUTION: {task['institution']}
 TASK: {task['title']}
 
@@ -136,6 +138,8 @@ REQUIREMENTS:
 4. List all enclosures at the end
 5. Do NOT invent legal claims
 6. Tone: respectful, clear, firm
+7. Do NOT state any processing time or number of days unless it appears in the INSTITUTION KNOWLEDGE above
+8. If the PAN of the deceased is NOT available, do not list a PAN copy as an enclosure; instead include the line "[PAN_COPY_OF_DECEASED - to be added once obtained]" among the enclosures
 
 Respond ONLY with the letter text. Start with "To," directly."""
 
