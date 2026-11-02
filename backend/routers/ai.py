@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
@@ -13,6 +13,7 @@ from routers.auth import get_current_user
 from graph import run_case, run_advisor_only
 from agents.classifier import load_knowledge
 from agents.doc_generator import DOCUMENT_TYPE_MAP, generate_letter
+from agents.certificate import ExtractionError, extract_certificate
 
 logger = logging.getLogger(__name__)
 AI_UNAVAILABLE = "The AI service is unavailable right now. Please try again in a minute."
@@ -233,3 +234,29 @@ def generate_document(
         "placeholders_remaining": doc.placeholders_remaining,
         "created_at":             doc.created_at,
     }
+
+
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
+MAX_CERT_BYTES = 8 * 1024 * 1024
+
+
+@router.post("/extract-certificate")
+async def extract_certificate_route(
+    file: UploadFile = File(...),
+    current_user=Depends(get_current_user),
+):
+    """Read a death-certificate image. The image is processed in memory and never stored."""
+    if file.content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(status_code=415, detail="Please upload a JPG, PNG or WEBP image.")
+    data = await file.read(MAX_CERT_BYTES + 1)
+    if not data:
+        raise HTTPException(status_code=400, detail="The file is empty.")
+    if len(data) > MAX_CERT_BYTES:
+        raise HTTPException(status_code=413, detail="The image is too large (max 8 MB).")
+    try:
+        return extract_certificate(data, file.content_type)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="This does not look like a death certificate.")
+    except ExtractionError as e:
+        logger.error("certificate extraction failed: %s", e)
+        raise HTTPException(status_code=502, detail=AI_UNAVAILABLE)
