@@ -1,3 +1,4 @@
+import difflib
 import os
 import re
 import uuid
@@ -6,7 +7,7 @@ from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage
 
 from agents.state import AgentState, GeneratedDocument, Task
-from prompts import doc_generator_prompt
+from prompts import doc_generator_prompt, nominee_intro
 
 DOCUMENT_TYPE_MAP = {
     "SBI":          "account_closure_request",
@@ -50,6 +51,36 @@ def kinship_violations(text: str, relation: str) -> list[str]:
     return sorted((words & KINSHIP_WORDS) - allowed)
 
 
+INTRO_RE = re.compile(
+    r"I,\s+[^,\n]{2,60},\s+(?:the\s+)?[A-Za-z]+\s+of\s+the\s+late\s+[A-Za-z][A-Za-z .'-]{1,60}?(?=[,.;\n])"
+)
+
+
+def fix_name_typos(text: str, names: list[str]) -> str:
+    """Replace near-miss spellings of the real names (e.g. Abhashek for Abhishek) with the exact ones."""
+    wanted = {w for n in names for w in re.findall(r"[A-Za-z][A-Za-z'-]{4,}", n)}  # 5+ letters only
+    wanted_lower = {w.lower() for w in wanted}
+
+    def swap(m):
+        word = m.group(0)
+        if word.lower() in wanted_lower:
+            return word
+        for w in wanted:
+            if difflib.SequenceMatcher(None, word.lower(), w.lower()).ratio() >= 0.86:
+                return w
+        return word
+
+    return re.sub(r"\b[A-Z][a-z][A-Za-z'-]{3,}\b", swap, text)
+
+
+def ensure_intro(text: str, intro: str) -> tuple[str, bool]:
+    """Make sure the exact introduction sentence is present. Returns (text, ok)."""
+    if intro.lower() in text.lower():
+        return text, True
+    fixed, n = INTRO_RE.subn(intro, text, count=1)
+    return (fixed, True) if n else (text, False)
+
+
 def generate_letter(case_input: dict, task: dict, knowledge: dict, doc_type: str, llm=None) -> GeneratedDocument:
     """Draft one letter for one task. Used by the pipeline and by the on-demand route."""
     llm = llm or get_llm()
@@ -74,9 +105,16 @@ def generate_letter(case_input: dict, task: dict, knowledge: dict, doc_type: str
         letter = llm.invoke([HumanMessage(content=retry)]).content.strip()
         bad = kinship_violations(letter, relation)
 
+    # Deterministic repairs: exact spelling of the names, and the exact introduction sentence
+    letter = fix_name_typos(letter, [case_input.get("deceased_name", ""), case_input.get("nominee_name", "")])
+    intro = nominee_intro(case_input["nominee_name"], relation, case_input["deceased_name"])
+    letter, intro_ok = ensure_intro(letter, intro)
+
     placeholders = extract_placeholders(letter)
     if bad:  # still wrong: keep the draft but make the user check it
         placeholders.append("REVIEW_RELATIONSHIP_WORDING")
+    if not intro_ok:
+        placeholders.append("REVIEW_INTRODUCTION")
 
     return {
         "doc_id":                 f"doc_{str(uuid.uuid4())[:8]}",
