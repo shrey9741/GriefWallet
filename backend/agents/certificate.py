@@ -89,6 +89,19 @@ def _clean(v, max_len):
     return v[:max_len] if v else None
 
 
+def normalize_name(name: str) -> str:
+    """Title-case a name only if it is printed entirely in capitals; otherwise leave it."""
+    letters = [c for c in name if c.isalpha()]
+    if not letters or not all(c.isupper() for c in letters if c.isascii()) or not any(c.isascii() for c in letters):
+        return name
+    out = []
+    for word in name.lower().split(" "):
+        w = re.sub(r"(^|[-'])([a-z])", lambda m: m.group(1) + m.group(2).upper(), word)
+        w = re.sub(r"^(Mc)([a-z])", lambda m: m.group(1) + m.group(2).upper(), w)
+        out.append(w)
+    return " ".join(out)
+
+
 def validate_fields(raw: dict, today: date | None = None) -> dict:
     """Return cleaned fields plus warnings. Bad values become None, never guesses."""
     today = today or date.today()
@@ -97,6 +110,8 @@ def validate_fields(raw: dict, today: date | None = None) -> dict:
     name = _clean(raw.get("deceased_name"), 100)
     if name and (len(name) < 2 or not re.search(r"[A-Za-zऀ-ॿ]", name)):
         name = None
+    if name:
+        name = normalize_name(name)
     if not name:
         warnings.append("Could not read the name. Please type it in.")
 
