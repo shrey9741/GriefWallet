@@ -135,7 +135,7 @@ REQUIREMENTS:
 1. Use formal Indian letter format: To, Subject, Salutation, Body, Yours faithfully
 2. 200 to 300 words
 3. Use capitalised square-bracket placeholders such as [BRANCH_NAME], [ACCOUNT_NUMBER], [PHONE] for fields the user must fill (do not prefix them with PLACEHOLDER)
-4. List all enclosures at the end
+4. Mention the documents in one short sentence in the body, and list the enclosures only once, in an "Enclosures:" list at the end (do not repeat the list in the body)
 5. Do NOT invent legal claims
 6. Tone: respectful, clear, firm
 7. Do NOT state any processing time or number of days unless it appears in the INSTITUTION KNOWLEDGE above
