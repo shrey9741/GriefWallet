@@ -6,6 +6,7 @@ backend/**/__pycache__/
 *.pyc
 *.pyo
 backend/.env
+backend/letter_eval_results.json
 
 # Node (for frontend later)
 frontend/node_modules/
