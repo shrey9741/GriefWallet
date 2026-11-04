@@ -1,296 +1,231 @@
 # GriefWallet
 
-> AI-powered post-death financial asset recovery platform for Indian families.
+**AI-assisted asset recovery after a death, for Indian families.**
+GriefWallet turns the paperwork that follows a bereavement (banks, insurance, EPFO, NPS, mutual funds) into a clear, ordered plan, flags what is blocking each claim, and drafts the claim letters.
 
-GriefWallet helps grieving families navigate asset recovery across banks, insurance providers, EPFO and pension funds through AI-generated workflows, institution-specific guidance, and automated document generation.
+**Live app:** [griefwallet.in](https://griefwallet.in)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green)](https://fastapi.tiangolo.com)
-[![React](https://img.shields.io/badge/React-18-blue)](https://reactjs.org)
-[![LangGraph](https://img.shields.io/badge/LangGraph-0.2.28-orange)](https://langchain-ai.github.io/langgraph)
+> GriefWallet drafts documents and suggests next steps. It does not provide legal advice, and institutions' rules change. Always verify requirements with the institution before submitting anything.
 
 ---
 
-## Live Demo
+## Why this exists
 
-| Service | URL | Status |
-|---------|-----|--------|
-| Frontend | Coming soon — Vercel | 🔲 Pending |
-| Backend API | Coming soon — Render | 🔲 Pending |
-| API Docs | Coming soon — /docs | 🔲 Pending |
+After a death, a family has to deal with many institutions at once, each with its own forms, documents and order of steps. One missing document (often the deceased's PAN) can stall several claims, and the people dealing with it are grieving. GriefWallet:
 
----
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|------------|
-| Frontend | React 18 + Vite + Tailwind CSS |
-| Auth | Clerk (Google OAuth + Email) |
-| Backend | FastAPI + SQLAlchemy |
-| AI Orchestration | LangGraph + Groq (Llama 3.3 70B) |
-| Database | SQLite (dev) → PostgreSQL (prod) |
-| Deployment | Vercel (frontend) + Render (backend) |
-
----
+1. Collects a few facts about the deceased and the nominee.
+2. Builds a task list per institution, with dependencies (what blocks what).
+3. Drafts the formal letters, filled in with the case details.
+4. Shows what to do next and what is waiting on something else.
 
 ## Features
 
-### Core (v1.0)
-- AI-generated task workflows per institution (SBI, LIC, EPFO, HDFC)
-- Institution-specific document generation — closure letters, claim letters, EPFO cover letters
-- Case management with priority-based task tracking
-- Blocker detection — flags missing PAN, disputed wills, multi-nominee succession conflicts
-- Role-based auth via Clerk — family, institution officer, admin
-- Progress timeline per case
-- Dark / light mode toggle
+- **Sign in with email or Google** (Clerk, production instance on a custom domain).
+- **3-step case creation**, including an optional **death-certificate upload** that reads the name and date of death with a vision model and pre-fills the form. You review every value before saving; the image is processed in memory and not stored.
+- **Recovery plan** from a 4-stage LangGraph pipeline: tasks per institution with priority, required documents, procedure steps, estimated duration and blockers.
+- **Blocker detection:** missing PAN, missing Aadhaar or death certificate, disputed will, multiple nominees, legal-heir or succession certificate needs. Blocked tasks stay locked until their blocker is done.
+- **Case page:** tasks grouped by institution, status updates, expandable required documents and procedure, AI "next steps" insight, document list, timeline and delete case.
+- **On-demand letter drafting** (even for a blocked task, so it is ready when the blocker clears), with a "fill in before sending" list of the blanks left in each letter. Copy or download as text.
+- **Privacy policy page** describing exactly what is collected and which services process it.
 
-### AI Agent Pipeline
-```
-Case Input
-    ↓
-Classifier Node     → detects institution types + global flags (rule-based, no LLM)
-    ↓
-Planner Node        → generates task list with priorities and blockers (LLM)
-    ↓
-Doc Generator Node  → generates institution-specific formal letters (LLM)
-    ↓
-Advisor Node        → AI next-step insight for the family (LLM)
+## Architecture
+
+```mermaid
+flowchart LR
+    U[Browser<br/>React + Vite on Vercel] -- sign in --> C[Clerk<br/>email and Google]
+    U -- API calls with session token --> A[FastAPI on Render]
+    A -- verify RS256 JWT via JWKS --> C
+    A --> D[(PostgreSQL on Neon)]
+    A -- LangGraph pipeline, letters --> G[Groq<br/>gpt-oss-120b]
+    A -- certificate image --> V[Groq vision model]
 ```
 
-### Eval Results
-- 27/27 checks passing across 3 ground truth scenarios
-- Scenario A: Clean case (SBI + LIC, sole nominee) — 8/8
-- Scenario B: Multiple nominees + EPFO — 9/9
-- Scenario C: PAN missing + disputed will — 10/10
+### The AI pipeline
 
----
-
-## Project Structure
-
-```
-GriefWallet/
-├── backend/
-│   ├── agents/
-│   │   ├── state.py          # Shared TypedDict state schema
-│   │   ├── classifier.py     # Rule-based institution classifier
-│   │   ├── planner.py        # LLM task generation node
-│   │   ├── doc_generator.py  # LLM document generation node
-│   │   └── advisor.py        # LLM AI insight node
-│   ├── knowledge_base/
-│   │   ├── sbi.json          # SBI institution knowledge
-│   │   ├── lic.json          # LIC institution knowledge
-│   │   ├── epfo.json         # EPFO institution knowledge
-│   │   └── hdfc.json         # HDFC institution knowledge
-│   ├── routers/
-│   │   ├── auth.py           # Clerk auth + JWT routes
-│   │   ├── cases.py          # Case CRUD routes
-│   │   ├── tasks.py          # Task status routes
-│   │   ├── ai.py             # AI generation routes
-│   │   ├── documents.py      # Document routes
-│   │   └── timeline.py       # Timeline routes
-│   ├── models/               # SQLAlchemy models
-│   ├── services/             # Business logic
-│   ├── graph.py              # LangGraph pipeline
-│   ├── prompts.py            # All LLM prompts
-│   ├── run_eval.py           # Ground truth evaluator
-│   └── main.py               # FastAPI app
-└── frontend/
-    ├── src/
-    │   ├── pages/
-    │   │   ├── Login.jsx         # Clerk auth with custom UI
-    │   │   ├── Dashboard.jsx     # Case list + stats
-    │   │   ├── CreateCase.jsx    # 3-step case creation form
-    │   │   ├── CaseDetail.jsx    # 3-panel workflow engine
-    │   │   ├── Documents.jsx     # Document preview + download
-    │   │   └── Timeline.jsx      # Case event timeline
-    │   ├── components/
-    │   │   ├── Navbar.jsx
-    │   │   ├── Sidebar.jsx
-    │   │   └── ProtectedRoute.jsx
-    │   ├── context/
-    │   │   └── AuthContext.jsx
-    │   └── api.js                # Axios instance
-    └── public/
+```mermaid
+flowchart LR
+    I[Case input] --> CL[Classifier<br/>rule-based, no LLM]
+    CL --> PL[Planner<br/>LLM]
+    PL --> DG[Doc generator<br/>LLM + guardrails]
+    DG --> AD[Advisor<br/>LLM]
+    AD --> O[Tasks, letters, insight]
 ```
 
----
+| Stage | What it does |
+|-------|--------------|
+| Classifier | Deterministic rules turn the case into flags (`pan_missing`, `disputed_will`, `multiple_nominees`, ...) and loads the institution's knowledge file. No model involved, so it is testable and cheap. |
+| Planner | The LLM builds the task list and dependencies, constrained to the knowledge base (required documents and durations come from it, not from the model's memory). |
+| Doc generator | Drafts letters for high-priority, unblocked tasks. More below. |
+| Advisor | Writes the "what to do next, what could go wrong, what can run in parallel" insight. |
 
-## Local Setup
+Letters can also be generated on demand for any task that has a template, through `POST /ai/generate-document`.
 
-### Prerequisites
-- Python 3.12+
-- Node.js 18+
-- Groq API key (free at console.groq.com)
-- Clerk account (free at clerk.com)
+## Making LLM output trustworthy
 
-### Backend
+Live testing found real defects in generated letters. Each fix is enforced in code, not just in the prompt:
 
-```bash
-cd backend
-python -m venv venv
+| Problem found | Fix |
+|---------------|-----|
+| The model reversed the relationship ("I, Arun, son of the late Abhishek" when Arun is the parent) | The introduction sentence is **built in code** from the case data and required verbatim. A kinship-word check catches other slips (father, mother, ...), retries once, and flags the letter if it still fails. |
+| The model misspelled the deceased's name ("Abhashek") | Near-miss spellings of the real names are replaced with the exact ones. If the introduction is still missing, the letter is flagged for review. |
+| Invented processing times ("15-20 working days") | The prompt forbids timelines that are not in the institution data, and the eval checks for them. |
+| A PAN copy listed as an enclosure when the PAN is missing | The prompt receives the PAN state and uses a clearly marked placeholder instead. |
+| Retired model names breaking the app | Model names are environment variables (`GROQ_MODEL`, `GROQ_VISION_MODEL`). |
+| Vision output can be wrong | Extracted fields are validated (real date, not in the future, sane name), warnings are shown, and the user confirms every value. |
 
-# Windows
-venv\Scripts\activate
+## Evaluation
 
-# Mac/Linux
-source venv/bin/activate
+Two scripts in `backend/`:
 
-pip install -r requirements.txt
-cp .env.example .env
-# Add GROQ_API_KEY and CLERK_SECRET_KEY to .env
-
-uvicorn main:app --reload
-# API running at http://localhost:8000
-# Docs at http://localhost:8000/docs
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-cp .env.example .env
-# Add VITE_CLERK_PUBLISHABLE_KEY to .env
-
-npm run dev
-# Running at http://localhost:5173
-```
-
-### Run Agent Eval
+- **`run_eval.py`:** runs the full pipeline on three ground-truth families (clean case, multiple nominees with EPFO, missing PAN with a disputed will) and checks flags, task presence, blocking and injected tasks.
+- **`run_letter_eval.py`:** generates letters across six nominee relationships and both PAN states (SBI and LIC) and scores each on: correct introduction, no kinship slip, no unsourced timeline, no deceased-PAN claim when missing, names spelled correctly, no `PLACEHOLDER` prefix, and a proper letter start. Failures print the offending line, and the full text is saved to `letter_eval_results.json` (keep that file out of git).
 
 ```bash
 cd backend
 python run_eval.py --verbose
-# Expected: 27/27 checks passing
+python run_letter_eval.py --selftest          # checks the checkers, no API calls
+python run_letter_eval.py --runs 1            # 24 letters
+python run_letter_eval.py --runs 1 --only daughter,parent   # a subset
 ```
 
----
+Groq's free tier has a daily token limit shared with the live app. The letter eval stops with an "INCOMPLETE" message if it hits the limit, instead of reporting a partial run as a pass.
 
-## API Routes
+## Tech stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | React 19, Vite, Tailwind CSS 3, React Router 7, Axios |
+| Auth | Clerk (production instance, custom domain) |
+| Backend | FastAPI, SQLAlchemy 2, Pydantic 2, Python 3.11 |
+| Database | PostgreSQL on Neon (SQLite for local development) |
+| AI | LangGraph, LangChain Groq, Groq `openai/gpt-oss-120b` (text), a Groq vision model (certificates) |
+| Hosting | Vercel (frontend), Render (backend), Neon (database) |
+
+## Project structure
+
+```
+GriefWallet/
+├── AGENTS.md                  # Rules and conventions for AI coding agents
+├── backend/
+│   ├── main.py                # FastAPI app, CORS from FRONTEND_ORIGINS
+│   ├── graph.py               # LangGraph pipeline
+│   ├── prompts.py             # All LLM prompts (nominee_intro builds the relationship sentence)
+│   ├── run_eval.py            # Pipeline ground-truth evaluator
+│   ├── run_letter_eval.py     # Letter-quality evaluator
+│   ├── agents/                # classifier, planner, doc_generator, advisor, certificate
+│   ├── knowledge_base/        # sbi.json, hdfc.json, lic.json, epfo.json
+│   ├── routers/               # auth, cases, tasks, ai, documents, timeline
+│   ├── models/                # User, Case, Task, Document
+│   └── db/                    # engine and session
+└── frontend/
+    └── src/
+        ├── api.js             # Axios client; attaches the Clerk token
+        ├── pages/             # Login, Dashboard, CreateCase, CaseDetail, Privacy, ...
+        └── components/
+```
+
+## Local setup
+
+Prerequisites: Python 3.11, Node 18+, a [Groq API key](https://console.groq.com) and a [Clerk](https://clerk.com) application.
+
+```bash
+# Backend
+cd backend
+python -m venv venv
+venv\Scripts\activate          # Windows   (Mac/Linux: source venv/bin/activate)
+pip install -r requirements.txt
+cp .env.example .env           # then fill in the values
+uvicorn main:app --reload      # http://localhost:8000, docs at /docs
+
+# Frontend (new terminal)
+cd frontend
+npm install
+cp .env.example .env           # then fill in the values
+npm run dev                    # http://localhost:5173
+```
+
+### Environment variables (names only)
+
+| Where | Variable | Purpose |
+|-------|----------|---------|
+| Backend | `GROQ_API_KEY` | Groq access |
+| Backend | `GROQ_MODEL`, `GROQ_VISION_MODEL` | Optional model overrides |
+| Backend | `DATABASE_URL` | Postgres URL (SQLite if unset) |
+| Backend | `CLERK_ISSUER` | Clerk frontend API URL, e.g. `https://clerk.your-domain.com` |
+| Backend | `CLERK_SECRET_KEY` | Server-side Clerk access (never in the frontend) |
+| Backend | `CLERK_AUTHORIZED_PARTIES` | Allowed token origins |
+| Backend | `FRONTEND_ORIGINS` | Allowed CORS origins |
+| Frontend | `VITE_CLERK_PUBLISHABLE_KEY` | Clerk publishable key |
+| Frontend | `VITE_API_URL` | Backend base URL |
+
+## Deployment notes
+
+- **Render (backend):** root directory `backend`, build `pip install -r requirements.txt`, start `uvicorn main:app --host 0.0.0.0 --port $PORT`. Set `PYTHON_VERSION=3.11.9` (newer versions fail to build `psycopg2-binary`).
+- **Neon (database):** use the plain connection string as `DATABASE_URL`: no quotes, no `psql` prefix, ending in `?sslmode=require`.
+- **Vercel (frontend):** `VITE_*` variables are baked in at build time, so redeploy after changing them.
+- **Clerk:** a production instance needs a custom domain and its DNS records, and a Google OAuth client of your own.
+
+## API
+
+All routes except `/` and `/health` require a Clerk session token (`Authorization: Bearer ...`), and every case route checks that the case belongs to the caller.
 
 | Method | Route | Description |
 |--------|-------|-------------|
-| POST | /auth/register | Register new user |
-| POST | /auth/login | Login + get JWT |
-| GET | /auth/me | Get current user |
-| POST | /cases/create | Create new case |
-| GET | /cases | List all cases |
-| GET | /cases/:id | Get case details |
-| GET | /cases/dashboard-stats | Dashboard statistics |
-| GET | /tasks/:case_id | Get tasks for case |
-| PATCH | /tasks/:task_id | Update task status |
-| POST | /ai/generate-checklist | Run AI agent pipeline |
-| POST | /ai/generate-insight | Regenerate AI insight |
-| GET | /documents/:case_id | Get generated documents |
-| GET | /timeline/:case_id | Get case timeline |
+| GET | `/auth/me` | Current user |
+| POST | `/cases/create` | Create a case |
+| GET | `/cases` | List the caller's cases |
+| GET | `/cases/dashboard-stats` | Dashboard numbers |
+| GET | `/cases/{id}` | Case with tasks |
+| DELETE | `/cases/{id}` | Delete a case and its data |
+| GET | `/tasks/{case_id}` | Tasks for a case |
+| PATCH | `/tasks/{task_id}` | Update a task's status |
+| POST | `/ai/generate-checklist` | Run the full pipeline for a case |
+| POST | `/ai/generate-insight` | Regenerate the AI insight |
+| POST | `/ai/generate-document` | Draft one letter for a task |
+| POST | `/ai/extract-certificate` | Read a death-certificate image (JPG, PNG, WEBP up to 8 MB; not stored) |
+| GET | `/documents/{case_id}` | Letters for a case |
+| GET | `/timeline/{case_id}` | Case events and progress |
+| GET | `/health` | Health check |
 
----
+## Security and privacy
 
-## Institution Knowledge Base
+- Session tokens are verified on the server with Clerk's public keys (RS256), including issuer, expiry and authorized origin.
+- Secrets (`CLERK_SECRET_KEY`, `GROQ_API_KEY`, `DATABASE_URL`) live only in hosting dashboards, never in the repository or the frontend.
+- CORS allows exact origins only.
+- Certificate images are processed in memory and sent to the AI provider only to read them. See the in-app [privacy policy](https://griefwallet.in/privacy).
 
-| Institution | Type | Forms Covered |
-|-------------|------|---------------|
-| SBI | Bank | Account closure, nominee transfer |
-| HDFC | Bank | Nominee claim, succession |
-| LIC | Insurance | Form A, Form B, death benefit |
-| EPFO | Government | Form 20, Form 10-D, EPS pension |
+## Known limitations
 
----
+- The Documents and Timeline top-level pages are basic; the full versions live inside each case page today.
+- Access is per-user only. There are no roles, sharing or institution accounts yet.
+- Dedicated knowledge files exist for SBI, HDFC, LIC and EPFO. NPS and mutual funds use a generic fallback.
+- Certificate upload accepts images only (no PDF).
+- The timeline is derived from last-updated times, not a full event history.
+- Tables are created on startup; there are no database migrations yet.
+- Groq's free tier has a daily token limit that the app and the evals share.
 
 ## Roadmap
 
-### v1.0 — Current
-- [x] LangGraph 4-node agent pipeline
-- [x] FastAPI backend with all routes
-- [x] SQLite local database
-- [x] Clerk authentication (Google + email)
-- [x] Login page
-- [x] Dashboard page
-- [x] Create Case page
-- [ ] Case Detail page (3-panel)
-- [ ] Document Generator page
-- [ ] Timeline page
-- [ ] Role-based dashboards (family, institution, admin)
-
-### v1.1 — Deployment
-- [ ] PostgreSQL on Render
-- [ ] Frontend deployed on Vercel
-- [ ] Backend deployed on Render
-- [ ] Environment variables configured
-- [ ] CORS configured for production
-
-### v1.2 — Role-based Access
-- [ ] Institution officer dashboard
-- [ ] Admin analytics dashboard
-- [ ] Role assignment via Clerk publicMetadata
-- [ ] Scoped API routes per role
-
-### v1.3 — Enhanced AI
-- [ ] Pinecone vector DB for semantic institution search
-- [ ] More institutions — ICICI, PNB, Max Life, NPS
-- [ ] PDF generation and download
-- [ ] Email notifications for status updates
-
-### v2.0 — Production
-- [ ] DPDP Act 2023 compliance
-- [ ] Encrypted PAN/Aadhaar storage
-- [ ] Audit logs
-- [ ] Multi-language support (Hindi, Tamil, Bengali)
-- [ ] Mobile app (React Native)
-
----
-
-## Changelog
-
-### v0.3.0 — 2026-05-19
-- Added Create Case page with 3-step form
-- Clerk Google OAuth + email authentication
-- Dashboard page with live stats and case cards
-- Dark/light mode toggle
-
-### v0.2.0 — 2026-05-14
-- FastAPI backend complete — all routes working
-- SQLAlchemy models — User, Case, Task, Document
-- JWT authentication working
-- Full API test suite passing
-
-### v0.1.0 — 2026-05-13
-- LangGraph agent foundation
-- 27/27 eval checks passing
-- Institution knowledge base — SBI, LIC, EPFO, HDFC
-- 3 ground truth scenarios documented
-
----
-
-## Ground Truth Scenarios
-
-| Scenario | Family | Institutions | Complexity | Result |
-|----------|--------|--------------|------------|--------|
-| A | Sharma family | SBI + LIC | Low — clean nominee | 8/8 ✅ |
-| B | Verma family | HDFC + EPFO + MF | Medium — multiple nominees | 9/9 ✅ |
-| C | Khan family | SBI + LIC + EPFO + NPS | High — PAN missing + disputed will | 10/10 ✅ |
-
----
+- Case event log for a real timeline, and letter status (draft, ready, sent) with in-page fill-in of blanks.
+- More institutions (ICICI, PNB, Post Office, more insurers) and Hindi or regional-language letters.
+- Reminders and deadline tracking.
+- Case chat grounded in the case data and knowledge base.
+- Extraction from more documents (Aadhaar, passbook, policy copy), and PDF certificates.
+- Case sharing with roles, PDF export of a full case pack, Alembic migrations.
+- Tracing for LLM calls and automated tests in CI.
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feat/your-feature`)
-3. Commit changes (`git commit -m "feat: your feature"`)
-4. Push to branch (`git push origin feat/your-feature`)
-5. Open a Pull Request
-
----
+1. Fork the repository and create a branch (`git checkout -b feat/your-feature`).
+2. Read `AGENTS.md` for project rules.
+3. Commit, push and open a pull request.
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
-
----
+MIT. Add a `LICENSE` file at the repository root to match this.
 
 ## Author
 
-Built by **Shrey** — [GitHub](https://github.com/shrey9741)
+Built by **Shrey Kumar** ([GitHub](https://github.com/shrey9741)).
 
-*GriefWallet is dedicated to every family navigating loss — may this make one difficult thing a little easier.*
+*GriefWallet is dedicated to every family working through loss. May it make one difficult thing a little easier.*
