@@ -35,7 +35,8 @@ def get_llm() -> ChatGroq:
 
 
 def extract_placeholders(text: str) -> list[str]:
-    return re.findall(r"\[([A-Z_\s]+)\]", text)
+    # unique, in order of first appearance
+    return list(dict.fromkeys(re.findall(r"\[([A-Z_\s]+)\]", text)))
 
 
 KINSHIP_WORDS = {
