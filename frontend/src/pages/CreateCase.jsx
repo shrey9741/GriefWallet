@@ -228,7 +228,10 @@ export default function CreateCase() {
             <div key={step.num} className="flex items-center">
               <div
                 className="flex items-center gap-2 cursor-pointer"
-                onClick={() => setActiveStep(step.num)}
+                onClick={() => {
+                  setActiveStep(step.num);
+                  document.getElementById(`step-${step.num}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
               >
                 <div
                   className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
@@ -269,7 +272,7 @@ export default function CreateCase() {
               )}
 
               {/* Step 1 — Deceased Info */}
-              <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <div id="step-1" className="scroll-mt-20 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                 <h2 className="text-base font-bold text-gray-900 mb-4">
                   Step 1: Deceased Information
                 </h2>
@@ -355,7 +358,7 @@ export default function CreateCase() {
               </div>
 
               {/* Step 2 — Institutions */}
-              <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <div id="step-2" className="scroll-mt-20 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-1">
                   <h2 className="text-base font-bold text-gray-900">
                     Step 2: Financial Institutions
@@ -407,7 +410,7 @@ export default function CreateCase() {
               </div>
 
               {/* Step 3 — Nominee */}
-              <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <div id="step-3" className="scroll-mt-20 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                 <h2 className="text-base font-bold text-gray-900 mb-4">
                   Step 3: Nominee & Documentation
                 </h2>
