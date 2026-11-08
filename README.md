@@ -42,23 +42,29 @@ After a death, a family has to deal with many institutions at once, each with it
 
 ```mermaid
 flowchart LR
-    U[Browser<br/>React + Vite on Vercel] -- sign in --> C[Clerk<br/>email and Google]
-    U -- API calls with session token --> A[FastAPI on Render]
-    A -- verify RS256 JWT via JWKS --> C
-    A --> D[(PostgreSQL on Neon)]
-    A -- LangGraph pipeline, letters --> G[Groq<br/>gpt-oss-120b]
-    A -- certificate image --> V[Groq vision model]
+    U["Browser: React + Vite on Vercel"]
+    C["Clerk: email and Google sign-in"]
+    A["FastAPI on Render"]
+    D[("PostgreSQL on Neon")]
+    G["Groq: gpt-oss-120b"]
+    V["Groq vision model"]
+    U -->|sign in| C
+    U -->|API calls with session token| A
+    A -->|verify JWT via JWKS| C
+    A --> D
+    A -->|pipeline and letters| G
+    A -->|certificate image| V
 ```
 
 ### The AI pipeline
 
 ```mermaid
 flowchart LR
-    I[Case input] --> CL[Classifier<br/>rule-based, no LLM]
-    CL --> PL[Planner<br/>LLM]
-    PL --> DG[Doc generator<br/>LLM + guardrails]
-    DG --> AD[Advisor<br/>LLM]
-    AD --> O[Tasks, letters, insight]
+    I["Case input"] --> CL["Classifier: rule-based, no LLM"]
+    CL --> PL["Planner: LLM"]
+    PL --> DG["Doc generator: LLM + guardrails"]
+    DG --> AD["Advisor: LLM"]
+    AD --> O["Tasks, letters, insight"]
 ```
 
 | Stage | What it does |
@@ -202,7 +208,26 @@ All routes except `/` and `/health` require a Clerk session token (`Authorizatio
 - Session tokens are verified on the server with Clerk's public keys (RS256), including issuer, expiry and authorized origin.
 - Secrets (`CLERK_SECRET_KEY`, `GROQ_API_KEY`, `DATABASE_URL`) live only in hosting dashboards, never in the repository or the frontend.
 - CORS allows exact origins only.
+- Account deletion removes all of a user's data.
 - Certificate images are processed in memory and sent to the AI provider only to read them. See the in-app [privacy policy](https://griefwallet.in/privacy).
+
+## Security and abuse
+
+GriefWallet handles sensitive family and financial information, so here is what it checks and what it cannot.
+
+**What is enforced**
+- **Ownership.** Every case, task and letter is tied to the signed-in user, and every route checks it. Another account cannot read or change your data.
+- **Attestation.** Creating a case requires confirming you are the nominee or legal heir; the confirmation and its timestamp are stored with the case.
+- **Upload checks.** Certificate uploads are limited to JPEG, PNG or WebP by file signature (not just extension), capped at 8 MB, and rejected if the image is not a death certificate or its fields fail sanity checks (real date, not in the future).
+- **Rate limits.** AI endpoints are limited per user per hour to cap abuse and protect the free-tier quota.
+- **Your data, your control.** "Delete my account" on the Account page removes your account and all cases, tasks and letters.
+
+**What is not checked**
+- **Document authenticity.** GriefWallet cannot tell a genuine certificate from a forged or someone else's. It reads what the image says.
+- **Entitlement.** It cannot verify that you are actually the nominee or legal heir. The attestation is a declaration, not proof.
+- **No institution contact.** The app only drafts a plan and letters. Banks, insurers and EPFO verify identity and documents themselves before releasing anything, and nothing is sent on your behalf.
+
+Rate limits are in-memory and reset when the server restarts; a shared store would be needed for multiple instances.
 
 ## Known limitations
 
