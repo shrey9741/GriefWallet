@@ -44,6 +44,9 @@ def get_timeline(
             "timestamp": t.updated_at,
             "status":    t.status,
             "priority":  t.priority,
+            "task_ref":  t.task_id,
+            "blocked_by": t.blocked_by or [],
+            "blocker_reason": t.blocker_reason,
         })
 
     for d in docs:
@@ -54,6 +57,16 @@ def get_timeline(
             "timestamp": d.created_at,
             "status":    "done",
         })
+
+    for d in docs:
+        if d.sent_at:
+            events.append({
+                "type":      "letter_sent",
+                "label":     f"{d.institution} letter marked as sent",
+                "detail":    d.document_type,
+                "timestamp": d.sent_at,
+                "status":    "done",
+            })
 
     events.sort(key=lambda x: x["timestamp"])
 
