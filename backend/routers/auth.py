@@ -8,6 +8,7 @@ from jwt import PyJWKClient
 
 from db.database import get_db
 from models.user import User
+from models.case import Case
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -123,3 +124,34 @@ def get_me(current_user=Depends(get_current_user)):
         "full_name": current_user.full_name,
         "clerk_id": current_user.clerk_id,
     }
+
+
+
+@router.delete("/me")
+def delete_account(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Delete the caller's cases (tasks and letters included), their user record, and their sign-in account."""
+    clerk_id = current_user.clerk_id
+
+    # 1) Local data first, so nothing is left behind even if the next step fails
+    for case in db.query(Case).filter(Case.user_id == current_user.id).all():
+        db.delete(case)  # cascades to tasks and documents
+    db.delete(current_user)
+    db.commit()
+
+    # 2) Remove the sign-in account so the person is fully gone
+    auth_deleted = None
+    if clerk_id and CLERK_SECRET_KEY:
+        try:
+            r = httpx.delete(
+                f"https://api.clerk.com/v1/users/{clerk_id}",
+                headers={"Authorization": f"Bearer {CLERK_SECRET_KEY}"},
+                timeout=10,
+            )
+            auth_deleted = r.status_code in (200, 404)
+        except httpx.HTTPError:
+            auth_deleted = False
+
+    return {"deleted": True, "auth_account_deleted": auth_deleted}
