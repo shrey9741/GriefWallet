@@ -7,6 +7,7 @@ from sqlalchemy import inspect, text
 
 NEW_COLUMNS = [
     ("cases", "attested_at", "TIMESTAMP"),
+    ("documents", "sent_at", "TIMESTAMP"),
 ]
 
 

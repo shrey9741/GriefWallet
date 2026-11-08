@@ -17,5 +17,6 @@ class Document(Base):
     content               = Column(Text, nullable=False)
     placeholders_remaining = Column(JSON, default=list)
     created_at            = Column(DateTime, default=datetime.utcnow)
+    sent_at               = Column(DateTime, nullable=True)  # set when the user marks the letter as sent
 
     case = relationship("Case", back_populates="documents")
