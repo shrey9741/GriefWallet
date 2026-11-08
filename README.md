@@ -1,21 +1,21 @@
-<h1 align="center">🛡️ GriefWallet</h1>
+<h1 align="center">🕊️ GriefWallet</h1>
 
-<h3 align="center">An AI assistant that turns bereavement paperwork into a clear recovery plan for Indian families</h3>
+<h3 align="center">An AI assistant that turns the paperwork after a death into a clear recovery plan for Indian families</h3>
 
-<p align="center"><em>Enter the basics. Get an ordered plan, see what is blocked and why. Every detail and every letter is yours to review before it is used.</em></p>
+<p align="center"><i>Enter a few details. Get an ordered plan and draft letters. You review everything before anything is sent.</i></p>
 
 <p align="center">
   <img alt="Python" src="https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white">
   <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white">
   <img alt="React" src="https://img.shields.io/badge/React-19-20232A?logo=react&logoColor=61DAFB">
   <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-Neon-4169E1?logo=postgresql&logoColor=white">
-  <img alt="LangGraph" src="https://img.shields.io/badge/LangGraph-agent%20pipeline-1C3C3C?logo=langchain&logoColor=white">
+  <img alt="Orchestration" src="https://img.shields.io/badge/Orchestration-LangGraph-1C3C3C">
   <img alt="LLM" src="https://img.shields.io/badge/LLM-Groq-F55036">
   <img alt="Auth" src="https://img.shields.io/badge/Auth-Clerk-6C47FF?logo=clerk&logoColor=white">
-  <img alt="Deployed" src="https://img.shields.io/badge/Deployed-Vercel%20%2B%20Render-000000?logo=vercel&logoColor=white">
+  <img alt="Evals" src="https://img.shields.io/badge/evals-scripted-0A9EDC">
 </p>
 
-> **Live at [griefwallet.in](https://griefwallet.in).** This is an independent student project. GriefWallet drafts documents and suggests next steps; it does not provide legal advice, and institutions' rules change. Always verify requirements with the institution before submitting anything.
+> **Live at [griefwallet.in](https://griefwallet.in).** This is an independent student project. It drafts documents and suggests next steps; it does not provide legal advice, and institutions' rules change. Always verify requirements with the institution before submitting anything.
 
 ---
 
