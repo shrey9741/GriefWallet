@@ -42,7 +42,13 @@ def get_document(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    doc = db.query(Document).filter(Document.id == doc_id).first()
+    # Join through the case so a user can only read their own documents
+    doc = (
+        db.query(Document)
+        .join(Case, Case.id == Document.case_id)
+        .filter(Document.id == doc_id, Case.user_id == current_user.id)
+        .first()
+    )
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
     return {
