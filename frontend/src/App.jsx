@@ -7,11 +7,11 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Privacy from "./pages/Privacy";
 import Account from "./pages/Account";
+import Documents from "./pages/Documents";
+import Timeline from "./pages/Timeline";
 import Dashboard from "./pages/Dashboard";
 import CreateCase from "./pages/CreateCase";
 import CaseDetail from "./pages/CaseDetail";
-import Documents from "./pages/Documents";
-import Timeline from "./pages/Timeline";
 
 export default function App() {
   const { getToken } = useAuth();
@@ -32,6 +32,22 @@ export default function App() {
             afterSignInUrl="/dashboard"
             afterSignUpUrl="/dashboard"
           />
+        }
+      />
+      <Route
+        path="/documents"
+        element={
+          <ProtectedRoute>
+            <Documents />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/timeline"
+        element={
+          <ProtectedRoute>
+            <Timeline />
+          </ProtectedRoute>
         }
       />
       <Route
@@ -63,22 +79,6 @@ export default function App() {
         element={
           <ProtectedRoute>
             <CaseDetail />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/cases/:id/documents"
-        element={
-          <ProtectedRoute>
-            <Documents />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/cases/:id/timeline"
-        element={
-          <ProtectedRoute>
-            <Timeline />
           </ProtectedRoute>
         }
       />

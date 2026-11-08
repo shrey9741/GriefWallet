@@ -49,14 +49,22 @@ export default function AppNav({ active }) {
       </Link>
 
       <div className="hidden sm:flex gap-6 text-sm flex-1 ml-2">
-        <Link
-          to="/dashboard"
-          className={`pb-0.5 font-medium transition-all ${
-            active === "dashboard" ? "text-gray-900 border-b-2 border-blue-600" : "text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          Dashboard
-        </Link>
+        {[
+          { key: "dashboard", label: "Dashboard", to: "/dashboard" },
+          { key: "cases", label: "Cases", to: "/cases/new" },
+          { key: "documents", label: "Documents", to: "/documents" },
+          { key: "timeline", label: "Timeline", to: "/timeline" },
+        ].map((l) => (
+          <Link
+            key={l.key}
+            to={l.to}
+            className={`pb-0.5 font-medium transition-all ${
+              active === l.key ? "text-gray-900 border-b-2 border-blue-600" : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            {l.label}
+          </Link>
+        ))}
       </div>
       <div className="flex-1 sm:hidden" />
 
@@ -88,6 +96,8 @@ export default function AppNav({ active }) {
             </div>
             <div className="py-1">
               <button role="menuitem" className={item} onClick={() => go("/dashboard")}>My cases</button>
+              <button role="menuitem" className={`${item} sm:hidden`} onClick={() => go("/documents")}>Documents</button>
+              <button role="menuitem" className={`${item} sm:hidden`} onClick={() => go("/timeline")}>Timeline</button>
               <button role="menuitem" className={item} onClick={() => go("/cases/new")}>New recovery</button>
               <button role="menuitem" className={item} onClick={() => go("/account")}>Account and data</button>
               <button role="menuitem" className={item} onClick={() => go("/privacy")}>Privacy policy</button>
