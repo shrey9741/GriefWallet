@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useUser, useClerk } from "@clerk/clerk-react";
 import api from "../api";
+import AppNav from "../components/AppNav";
 
 // ── icons (inline SVG, no extra dependency) ──────────────────────────────────
 
@@ -458,36 +459,7 @@ export default function CaseDetail() {
   const firstName = user?.firstName || "G";
 
   // ── nav ──
-  const Nav = (
-    <nav className="h-14 bg-white border-b border-gray-200 flex items-center px-4 sm:px-6 gap-3 sm:gap-6 sticky top-0 z-40">
-      <Link to="/dashboard" className="flex items-center gap-2 text-blue-600 font-bold text-base tracking-tight">
-        <span className="w-6 h-6 rounded-md bg-blue-600 text-white flex items-center justify-center">
-          <Icon name="shield" className="w-3.5 h-3.5" />
-        </span>
-        GriefWallet
-      </Link>
-      <div className="flex gap-6 text-sm flex-1 ml-2">
-        <Link to="/dashboard" className="text-gray-500 hover:text-gray-700 font-medium">
-          Dashboard
-        </Link>
-        <span className="text-blue-600 font-semibold border-b-2 border-blue-600 pb-0.5">Case</span>
-      </div>
-      <button
-        onClick={() => navigate("/cases/new")}
-        className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 sm:px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 flex-shrink-0"
-      >
-        <Icon name="plus" className="w-3.5 h-3.5" />
-        <span className="hidden sm:inline">New Recovery</span>
-      </button>
-      <div
-        className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold cursor-pointer flex-shrink-0"
-        onClick={() => signOut(() => navigate("/login"))}
-        title="Click to log out"
-      >
-        {firstName.charAt(0).toUpperCase()}
-      </div>
-    </nav>
-  );
+  const Nav = <AppNav />;
 
   if (loading) {
     return (

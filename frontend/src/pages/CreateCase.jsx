@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
 import api from "../api";
+import AppNav from "../components/AppNav";
 
 const INSTITUTIONS = [
   { id: "SBI", name: "SBI", sub: "STATE BANK OF INDIA", icon: "🏦" },
@@ -60,6 +61,7 @@ export default function CreateCase() {
     will_exists: false,
     will_disputed: false,
     docs_available: [],
+    attested: false,
   });
 
   const [loading, setLoading] = useState(false);
@@ -137,6 +139,8 @@ export default function CreateCase() {
     if (form.institutions.length === 0)
       return setError("Please select at least one institution.");
     if (!form.nominee_name) return setError("Please enter the nominee name.");
+    if (!form.attested)
+      return setError("Please confirm that you are the nominee or legal heir.");
     if (
       !form.nominee_relation ||
       form.nominee_relation === "Select Relationship"
@@ -162,6 +166,7 @@ export default function CreateCase() {
         will_exists: form.will_exists,
         will_disputed: form.will_disputed,
         docs_available: form.docs_available,
+        attested: form.attested,
       });
 
       const caseId = caseRes.data.case_id;
@@ -210,44 +215,7 @@ export default function CreateCase() {
         </div>
       )}
 
-      {/* Navbar */}
-      <nav className="h-14 bg-white border-b border-gray-200 flex items-center px-6 gap-6 sticky top-0 z-40 shadow-sm">
-        <span className="text-blue-600 font-bold text-base tracking-tight flex-shrink-0">
-          GriefWallet
-        </span>
-        <div className="flex gap-6 text-sm flex-1 ml-4">
-          {[
-            { label: "Dashboard", path: "/dashboard" },
-            { label: "Cases", path: "/cases/new", active: true },
-            { label: "Documents", path: "#" },
-            { label: "Timeline", path: "#" },
-          ].map((item) => (
-            <Link
-              key={item.label}
-              to={item.path}
-              className={`pb-0.5 font-medium transition-all ${
-                item.active
-                  ? "text-gray-900 border-b-2 border-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </div>
-        <button className="ml-auto bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition-all">
-          New Asset Recovery
-        </button>
-        <button className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600">
-          🌙
-        </button>
-        <button className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600">
-          🔔
-        </button>
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xs font-bold">
-          {user?.firstName?.charAt(0)?.toUpperCase() || "U"}
-        </div>
-      </nav>
+      <AppNav />
 
       <div className="max-w-5xl mx-auto px-6 py-8">
         {/* Step indicator */}
@@ -524,22 +492,6 @@ export default function CreateCase() {
                     ))}
                   </div>
                 </div>
-
-                {/* File upload */}
-                <div>
-                  <p className="text-xs font-medium text-gray-600 mb-2">
-                    Upload Death Certificate
-                  </p>
-                  <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center hover:border-blue-300 transition-all">
-                    <div className="text-3xl mb-2">📄</div>
-                    <p className="text-sm text-gray-500">
-                      Drag and drop file or click to browse
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      PDF, JPEG, or PNG (Max 5MB)
-                    </p>
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -614,6 +566,20 @@ export default function CreateCase() {
             </div>
           </div>
 
+          {/* Confirmation */}
+          <label className="flex items-start gap-3 mt-6 p-4 rounded-xl border border-gray-200 bg-white cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.attested}
+              onChange={(e) => setForm({ ...form, attested: e.target.checked })}
+              className="mt-0.5 w-4 h-4 accent-blue-600"
+            />
+            <span className="text-xs text-gray-600 leading-relaxed">
+              I confirm that I am the nominee or legal heir of this person and am entitled to handle their affairs. I understand
+              that GriefWallet only drafts documents and does not verify them with any institution.
+            </span>
+          </label>
+
           {/* Bottom Actions */}
           <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-200">
             <button
@@ -625,7 +591,7 @@ export default function CreateCase() {
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !form.attested}
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-bold px-8 py-2.5 rounded-lg transition-all"
             >
               Generate Recovery Plan

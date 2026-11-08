@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useUser, useClerk, useAuth } from "@clerk/clerk-react";
 import api from "../api";
+import AppNav from "../components/AppNav";
 
 const StatCard = ({ label, value, icon, badge, badgeColor }) => (
   <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-2 shadow-sm hover:shadow-md transition-all">
@@ -136,47 +137,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
-      {/* Navbar */}
-      <nav className="h-14 bg-white border-b border-gray-200 flex items-center px-6 gap-6 sticky top-0 z-50 shadow-sm">
-        <span className="text-blue-600 font-bold text-base tracking-tight flex-shrink-0">GriefWallet</span>
-        <div className="flex gap-6 text-sm flex-1 justify-start ml-4">
-          {[
-            { label: "Dashboard", path: "/dashboard", active: true },
-            { label: "Cases", path: "/cases/new" },
-            { label: "Documents", path: "#" },
-            { label: "Timeline", path: "#" },
-          ].map((item) => (
-            <Link
-              key={item.label}
-              to={item.path}
-              className={`pb-0.5 font-medium transition-all ${
-                item.active
-                  ? "text-gray-900 border-b-2 border-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </div>
-        <div className="flex items-center gap-3 ml-auto">
-          <button
-            onClick={() => navigate("/cases/new")}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition-all"
-          >
-            New Asset Recovery
-          </button>
-          <button className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all">🔍</button>
-          <button className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all">🔔</button>
-          <div
-            className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xs font-bold cursor-pointer"
-            onClick={() => signOut(() => navigate("/login"))}
-            title="Click to logout"
-          >
-            {firstName.charAt(0).toUpperCase()}
-          </div>
-        </div>
-      </nav>
+      <AppNav active="dashboard" />
 
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

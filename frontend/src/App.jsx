@@ -6,6 +6,7 @@ import { setTokenGetter } from "./api";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Privacy from "./pages/Privacy";
+import Account from "./pages/Account";
 import Dashboard from "./pages/Dashboard";
 import CreateCase from "./pages/CreateCase";
 import CaseDetail from "./pages/CaseDetail";
@@ -31,6 +32,14 @@ export default function App() {
             afterSignInUrl="/dashboard"
             afterSignUpUrl="/dashboard"
           />
+        }
+      />
+      <Route
+        path="/account"
+        element={
+          <ProtectedRoute>
+            <Account />
+          </ProtectedRoute>
         }
       />
       <Route

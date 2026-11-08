@@ -86,7 +86,7 @@ export default function Privacy() {
         </h2>
         <p>
           You can ask us to view, correct or delete your account and case data at any time by
-          emailing us. Deleting your account removes your cases from our systems.
+          emailing us, or delete your account and all your case data yourself from the Account page. Deleting your account removes your cases, tasks and letters from our systems.
         </p>
 
         <h2 className="text-xl font-semibold text-slate-900 mt-8 mb-2">Security</h2>
@@ -105,7 +105,7 @@ export default function Privacy() {
         </p>
 
         <p className="mt-10 text-xs text-slate-400">
-          GriefWallet is a student project and does not provide legal advice.
+          GriefWallet is a student project and does not provide legal advice. It cannot verify that a document is genuine or that a person is entitled to act for a deceased person; institutions do that themselves.
         </p>
       </main>
     </div>
