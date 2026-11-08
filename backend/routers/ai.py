@@ -10,6 +10,7 @@ from models.case import Case
 from models.task import Task
 from models.document import Document
 from routers.auth import get_current_user
+from ratelimit import rate_limit
 from graph import run_case, run_advisor_only
 from agents.classifier import load_knowledge
 from agents.doc_generator import DOCUMENT_TYPE_MAP, generate_letter
@@ -36,6 +37,7 @@ def generate_checklist(
     req: GenerateChecklistRequest,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
+    _rate=Depends(rate_limit("checklist", 10, 3600)),
 ):
     case = db.query(Case).filter(
         Case.id == req.case_id,
@@ -119,6 +121,7 @@ def generate_insight(
     req: GenerateChecklistRequest,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
+    _rate=Depends(rate_limit("insight", 20, 3600)),
 ):
     case = db.query(Case).filter(
         Case.id == req.case_id,
@@ -165,6 +168,7 @@ def generate_document(
     req: GenerateDocumentRequest,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
+    _rate=Depends(rate_limit("document", 30, 3600)),
 ):
     """Draft a letter for one task on demand (works even while the task is blocked)."""
     case = db.query(Case).filter(
@@ -244,6 +248,7 @@ MAX_CERT_BYTES = 8 * 1024 * 1024
 async def extract_certificate_route(
     file: UploadFile = File(...),
     current_user=Depends(get_current_user),
+    _rate=Depends(rate_limit("certificate", 10, 3600)),
 ):
     """Read a death-certificate image. The image is processed in memory and never stored."""
     if file.content_type not in ALLOWED_IMAGE_TYPES:
@@ -251,6 +256,13 @@ async def extract_certificate_route(
     data = await file.read(MAX_CERT_BYTES + 1)
     if not data:
         raise HTTPException(status_code=400, detail="The file is empty.")
+    is_image = (
+        data.startswith(b"\xff\xd8\xff")
+        or data.startswith(b"\x89PNG\r\n\x1a\n")
+        or (data[:4] == b"RIFF" and data[8:12] == b"WEBP")
+    )
+    if not is_image:
+        raise HTTPException(status_code=415, detail="That file is not a valid JPG, PNG or WEBP image.")
     if len(data) > MAX_CERT_BYTES:
         raise HTTPException(status_code=413, detail="The image is too large (max 8 MB).")
     try:
