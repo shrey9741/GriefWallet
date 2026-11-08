@@ -7,11 +7,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from db.database import engine, Base
+from db.migrate import ensure_columns
 from models import User, Case, Task, Document
 from routers import auth, cases, tasks, ai, documents, timeline
 
 # Create all tables on startup
 Base.metadata.create_all(bind=engine)
+ensure_columns(engine)
 
 app = FastAPI(
     title="GriefWallet API",

@@ -23,6 +23,7 @@ class Case(Base):
     docs_available = Column(JSON, default=list)
     global_flags   = Column(JSON, default=list)
     status         = Column(String, default="active")
+    attested_at    = Column(DateTime, nullable=True)  # when the user confirmed they are the nominee / legal heir
     created_at     = Column(DateTime, default=datetime.utcnow)
     updated_at     = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
