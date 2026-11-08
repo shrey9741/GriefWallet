@@ -27,6 +27,7 @@ class CreateCaseRequest(BaseModel):
     will_exists:       bool = False
     will_disputed:     bool = False
     docs_available:    list[str] = []
+    attested:          bool = False   # user confirms they are the nominee / legal heir
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
@@ -37,8 +38,15 @@ def create_case(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
+    if not req.attested:
+        raise HTTPException(
+            status_code=400,
+            detail="Please confirm that you are the nominee or legal heir of this person.",
+        )
+
     case = Case(
         user_id=current_user.id,
+        attested_at=datetime.utcnow(),
         deceased_name=req.deceased_name,
         date_of_death=req.date_of_death,
         pan_available=str(req.pan_available),
